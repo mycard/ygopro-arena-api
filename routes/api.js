@@ -182,7 +182,6 @@ router.post('/score', function (req, res) {
             }).pop().on('end', function () {
                 console.log("finished update score !")
                 done()
-                res.json({ msg: 'success' })
             })
 
         })
@@ -207,8 +206,8 @@ router.post('/score', function (req, res) {
             }
         })
 
+        res.json({ msg: 'success' })
     })
-
 })
 
 router.get('/users', function (req, res) {
@@ -284,20 +283,30 @@ router.get('/user', function (req, res) {
                 return res.status(404).send(`username ${username} not found`)
             } else {
                 var user = result.rows[0]
-                resultData['exp'] = user['exp']
-                resultData['pt'] = user['pt']
+                resultData['exp'] = parseInt(user['exp'])
+                resultData['pt'] = parseInt(user['pt'])
 
                 resultData['entertain_win'] = user['entertain_win']
                 resultData['entertain_lose'] = user['entertain_lose']
                 resultData['entertain_draw'] = user['entertain_draw']
                 resultData['entertain_all'] = user['entertain_all']
-                resultData['entertain_wl_ratio'] = (user['entertain_win'] / user['entertain_all'] * 100).toFixed(2)
+
+                entertain_wl_ratio = 0
+                if (user['entertain_all'] > 0) {
+                    entertain_wl_ratio = (user['entertain_win'] / user['entertain_all'] * 100).toFixed(2)
+                }
+                resultData['entertain_wl_ratio'] = entertain_wl_ratio
 
                 resultData['athletic_win'] = user['athletic_win']
                 resultData['athletic_lose'] = user['athletic_lose']
                 resultData['athletic_draw'] = user['athletic_draw']
                 resultData['athletic_all'] = user['athletic_all']
-                resultData['athletic_wl_ratio'] = (user['athletic_win'] / user['athletic_all'] * 100).toFixed(2)
+
+                let athletic_wl_ratio = 0
+                if (user['athletic_all'] > 0) {
+                    athletic_wl_ratio = (user['athletic_win'] / user['athletic_all'] * 100).toFixed(2)
+                }
+                resultData['athletic_wl_ratio'] = athletic_wl_ratio
 
                 var ep = new eventproxy()
 
