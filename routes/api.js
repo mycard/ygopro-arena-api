@@ -252,10 +252,6 @@ router.get('/user', function (req, res) {
 
         var username = req.query.username;
 
-        if (!username) {
-            return res.status(404).send('username can not be null')
-        }
-
         var resultData = {
             exp: 0,
             pt: 500,
@@ -273,6 +269,11 @@ router.get('/user', function (req, res) {
             arena_rank: 0
         }
 
+        if (!username) {
+            // return res.status(404).send('username can not be null')
+            return res.json(resultData)
+        }
+
         client.query(`SELECT * from user_info where username = '${username}'`, function (err, result) {
             //call `done()` to release the client back to the pool
             done()
@@ -280,7 +281,8 @@ router.get('/user', function (req, res) {
                 return console.error('error running query', err)
             }
             if (result.rows.length === 0) {
-                return res.status(404).send(`username ${username} not found`)
+                // return res.status(404).send(`username ${username} not found`)
+                res.json(resultData)
             } else {
                 var user = result.rows[0]
                 resultData['exp'] = parseInt(user['exp'])
