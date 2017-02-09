@@ -144,6 +144,24 @@ router.post('/score', function (req, res) {
                     athletic_all = athletic_all + ${paramB.athletic_all}
                     where username = '${userB.username}'`)
 
+                queries.push(`insert into battle_history values (
+                    '${userA.username}',
+                    '${userB.username}',
+                    '${userscoreA}',
+                    '${userscoreB}',
+                    '${expResult.expA}',
+                    '${expResult.expB}',
+                    '${userA.exp}',
+                    '${userB.exp}',
+                    '${ptResult.ptA}',
+                    '${ptResult.ptB}',
+                    '${userA.pt}',
+                    '${userB.pt}',
+                    '${arena}',
+                    '${start}',
+                    '${end}'
+                    )`)
+
             } else {
                 let expResult = utils.getExpScore(userA.exp, userB.exp, userscoreA, userscoreB)
 
@@ -173,6 +191,24 @@ router.post('/score', function (req, res) {
                     entertain_draw = entertain_draw + ${paramB.entertain_draw}, 
                     entertain_all = entertain_all + ${paramB.entertain_all}
                     where username = '${userB.username}'`)
+
+                queries.push(`insert into battle_history values (
+                    '${userA.username}',
+                    '${userB.username}',
+                    '${userscoreA}',
+                    '${userscoreB}',
+                    '${expResult.expA}',
+                    '${expResult.expB}',
+                    '${userA.exp}',
+                    '${userB.exp}',
+                    '${userA.pt}',
+                    '${userB.pt}',
+                    '${userA.pt}',
+                    '${userB.pt}',
+                    '${arena}',
+                    '${start}',
+                    '${end}'
+                    )`)
 
             }
 
