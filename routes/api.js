@@ -278,8 +278,7 @@ router.get('/users', function (req, res) {
 });
 
 router.get('/history', function(req,res) {
-     // to run a query we c
-     an acquire a client from the pool,
+     // to run a query we can acquire a client from the pool,
     // run a query on the client, and then return the client to the pool
     pool.connect(function (err, client, done) {
         if (err) {
