@@ -213,7 +213,7 @@ router.post('/score', function (req, res) {
             }
 
             queries.map(function (q) {
-                console.log(q)
+                // console.log(q)
                 return client.query(q)
             }).pop().on('end', function () {
                 console.log("finished update score !")
@@ -275,6 +275,48 @@ router.get('/users', function (req, res) {
         });
     });
 
+});
+
+router.get('/history', function(req,res) {
+     // to run a query we c
+     an acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+        if (err) {
+            return console.error('error fetching client from pool', err);
+        }
+        // order by what ? default pt
+        var o = req.query.o || 'pt';
+
+        // page_no 当前页数 page_num 每页展示数
+        // offset = (page_no - 1) * page_num 
+        // select * from battle_history limit  5 offset 15;
+        var page_no = req.query.page_no || 1
+        var page_num = req.query.page_num || 15
+        var offset = (page_no - 1) * page_num 
+        
+        var sql = 'SELECT count(*) from battle_history '
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+            var total = result.rows[0].count
+           
+            var sql2 = `SELECT * from battle_history order by start_time desc limit ${page_num} offset ${offset}`
+
+            client.query(sql2, function (err, result) {
+                 //call `done()` to release the client back to the pool
+                done()
+                if (err) {
+                    return console.error('error running query', err)
+                }
+                res.json({
+                    total:total-0,
+                    data:result.rows
+                });
+            });
+        });
+    });
 });
 
 router.get('/user', function (req, res) {
@@ -349,7 +391,7 @@ router.get('/user', function (req, res) {
                 var ep = new eventproxy()
 
                 ep.after('delay', 2, function (row) {
-                    console.log(resultData)
+                    // console.log(resultData)
                     res.json(resultData)
                 });
 

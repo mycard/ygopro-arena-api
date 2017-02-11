@@ -2,8 +2,12 @@
 
 var superagent = require('superagent')
 
+
+
+// var url = 'https://mycard.moe/ygopro/api/score'
+var url = 'http://localhost:3000/api/score'
 superagent
-    .post('http://localhost:3000/api/score')
+    .post(url)
     .send({
         accesskey: "XnvGjNG8jttfjYWhtqtgRfWBtyEwjMaF",
         usernameA: "Joe1991",
@@ -12,7 +16,7 @@ superagent
         userscoreB: 2,
         start: '2016-12-19T12:31:13+08:00',
         end: '2016-12-19T12:41:13+08:00',
-        arena: 'athletic' // 'entertain' 竞技 or 'entertain' 娱乐
+        arena: 'athletic' // 'athletic' 竞技 or 'entertain' 娱乐
     })
     .end(function (err, res) {
         if (err) {
