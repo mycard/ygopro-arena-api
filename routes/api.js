@@ -284,24 +284,63 @@ router.get('/history', function(req,res) {
         if (err) {
             return console.error('error fetching client from pool', err);
         }
-        // order by what ? default pt
-        var o = req.query.o || 'pt';
+
+        var username = req.query.username ;
+        var type = req.query.type ;
+
+        var arena = null //1 athletic 2 entertain
+        
+        if(type === '1' ){
+            arena = 'athletic'
+        }
+        if(type === '2' ){
+            arena = 'entertain'
+        }
+
+        var from_date = req.query.from_date ;
+        var to_date = req.query.to_date ;
 
         // page_no 当前页数 page_num 每页展示数
         // offset = (page_no - 1) * page_num 
         // select * from battle_history limit  5 offset 15;
-        var page_no = req.query.page_no || 1
+        var page_no = req.query.page || 1
         var page_num = req.query.page_num || 15
         var offset = (page_no - 1) * page_num 
         
         var sql = 'SELECT count(*) from battle_history '
+        
+        if(username && arena){
+            sql = `SELECT count(*) from battle_history where (usernamea = '${username}' or usernameb = '${username}' ) and type = '${arena}'`
+        }
 
+        if(username && !arena){
+            sql = `SELECT count(*) from battle_history where usernamea = '${username}' or usernameb = '${username}' `
+        }
+
+        if(!username && arena){
+            sql = `SELECT count(*) from battle_history where type = '${arena}'`
+        }
+        
         console.log(sql);
 
         client.query(sql, function (err, result) {
             var total = result.rows[0].count
            
             var sql2 = `SELECT * from battle_history order by start_time desc limit ${page_num} offset ${offset}`
+
+            if(username && arena){
+                sql2 = `SELECT * from battle_history where ( usernamea = '${username}' or usernameb = '${username}' ) and type = '${arena}' order by start_time desc limit ${page_num} offset ${offset}`
+            }
+
+            if(username && !arena){
+                sql2 = `SELECT * from battle_history where usernamea = '${username}' or usernameb = '${username}' order by start_time desc limit ${page_num} offset ${offset}`
+            }
+
+            if(!username && arena){
+                sql2 = `SELECT * from battle_history where type = '${arena}' order by start_time desc limit ${page_num} offset ${offset}`
+            }
+
+            console.log(sql2)
 
             client.query(sql2, function (err, result) {
                  //call `done()` to release the client back to the pool
