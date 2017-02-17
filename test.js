@@ -4,8 +4,8 @@ var superagent = require('superagent')
 
 
 
-// var url = 'https://mycard.moe/ygopro/api/score'
-var url = 'http://localhost:3000/api/score'
+var url = 'https://mycard.moe/ygopro/api/score'
+// var url = 'http://localhost:3000/api/score'
 superagent
     .post(url)
     .send({
