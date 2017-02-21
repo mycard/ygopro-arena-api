@@ -15,8 +15,8 @@ var config = {
     user: 'mycard', //env var: PGUSER
     database: 'ygopro', //env var: PGDATABASE
     password: 'dn8aSm9yAJx23qWn', //env var: PGPASSWORD
-    host: 'rm-bp15014uvga7994tzo.pg.rds.aliyuncs.com', // Server hosting the postgres database
-    port: 3432, //env var: PGPORT
+    host: 'postgres.mycard.moe', // Server hosting the postgres database
+    port: 5432, //env var: PGPORT
     max: 10, // max number of clients in the pool
     idleTimeoutMillis: 30000, // how long a client is allowed to remain idle before being closed
 }
