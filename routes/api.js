@@ -6,6 +6,8 @@ var router = express.Router()
 var pg = require('pg')
 var eventproxy = require('eventproxy')
 var utils = require('../utils/utils')
+var sqlite3 = require('sqlite3').verbose();
+
 
 // create a config to configure both pooling behavior
 // and client options
@@ -25,6 +27,12 @@ var config = {
 //it will keep idle connections open for a 30 seconds
 //and set a limit of maximum 10 idle clients
 var pool = new pg.Pool(config)
+
+//sqlite 
+var dbEn = new sqlite3.Database('locales/en-US/cards.cdb');
+var dbCn = new sqlite3.Database('locales/zh-CN/cards.cdb');
+
+
 
 pool.on('error', function (err, client) {
     // if an error is encountered by a client while it sits idle in the pool
@@ -274,83 +282,131 @@ router.get('/users', function (req, res) {
             res.json(result.rows);
         });
     });
-
 });
 
-router.get('/history', function(req,res) {
-     // to run a query we can acquire a client from the pool,
+router.get('/cardinfo', function (req, res) {
+    var id = req.query.id
+    var lang = req.query.lang || "cn"
+    if (!id) {
+        return res.status(404).send('card id is required!')
+    }
+    var db
+    if ("cn" === lang) {
+        db = dbCn
+    } else if ("en") {
+        db = dbEn
+    }
+
+    var result = {} ;
+
+    db.serialize(function () {
+        
+
+        db.get(`SELECT name , desc FROM  texts where id = ${id}`, function (err, row) {
+            
+            if (err) {
+                console.error(err)
+                return res.status(500).send('sqlite error!')
+            }
+            if (!row) {
+                return res.status(404).send('card info not found!')
+            }
+
+            result.name = row.name
+            result.desc = row.desc 
+
+            db.get(`SELECT atk , def FROM  datas where id = ${id}`, function (err, row) {
+                if (err) {
+                    console.error(err)
+                    return res.status(500).send('sqlite error!')
+                }
+                if (!row) {
+                    return res.status(404).send('card info not found!')
+                }
+
+                result.atk = row.atk
+                result.def = row.def
+                res.json(result);
+            });
+           
+        });
+    });
+});
+
+router.get('/history', function (req, res) {
+    // to run a query we can acquire a client from the pool,
     // run a query on the client, and then return the client to the pool
     pool.connect(function (err, client, done) {
         if (err) {
             return console.error('error fetching client from pool', err);
         }
 
-        var username = req.query.username ;
-        var type = req.query.type ;
+        var username = req.query.username;
+        var type = req.query.type;
 
         var arena = null //1 athletic 2 entertain
-        
-        if(type === '1' ){
+
+        if (type === '1') {
             arena = 'athletic'
         }
-        if(type === '2' ){
+        if (type === '2') {
             arena = 'entertain'
         }
 
-        var from_date = req.query.from_date ;
-        var to_date = req.query.to_date ;
+        var from_date = req.query.from_date;
+        var to_date = req.query.to_date;
 
         // page_no 当前页数 page_num 每页展示数
         // offset = (page_no - 1) * page_num 
         // select * from battle_history limit  5 offset 15;
         var page_no = req.query.page || 1
         var page_num = req.query.page_num || 15
-        var offset = (page_no - 1) * page_num 
-        
+        var offset = (page_no - 1) * page_num
+
         var sql = 'SELECT count(*) from battle_history '
-        
-        if(username && arena){
+
+        if (username && arena) {
             sql = `SELECT count(*) from battle_history where (usernamea = '${username}' or usernameb = '${username}' ) and type = '${arena}'`
         }
 
-        if(username && !arena){
+        if (username && !arena) {
             sql = `SELECT count(*) from battle_history where usernamea = '${username}' or usernameb = '${username}' `
         }
 
-        if(!username && arena){
+        if (!username && arena) {
             sql = `SELECT count(*) from battle_history where type = '${arena}'`
         }
-        
+
         console.log(sql);
 
         client.query(sql, function (err, result) {
             var total = result.rows[0].count
-           
+
             var sql2 = `SELECT * from battle_history order by start_time desc limit ${page_num} offset ${offset}`
 
-            if(username && arena){
+            if (username && arena) {
                 sql2 = `SELECT * from battle_history where ( usernamea = '${username}' or usernameb = '${username}' ) and type = '${arena}' order by start_time desc limit ${page_num} offset ${offset}`
             }
 
-            if(username && !arena){
+            if (username && !arena) {
                 sql2 = `SELECT * from battle_history where usernamea = '${username}' or usernameb = '${username}' order by start_time desc limit ${page_num} offset ${offset}`
             }
 
-            if(!username && arena){
+            if (!username && arena) {
                 sql2 = `SELECT * from battle_history where type = '${arena}' order by start_time desc limit ${page_num} offset ${offset}`
             }
 
             console.log(sql2)
 
             client.query(sql2, function (err, result) {
-                 //call `done()` to release the client back to the pool
+                //call `done()` to release the client back to the pool
                 done()
                 if (err) {
                     return console.error('error running query', err)
                 }
                 res.json({
-                    total:total-0,
-                    data:result.rows
+                    total: total - 0,
+                    data: result.rows
                 });
             });
         });
