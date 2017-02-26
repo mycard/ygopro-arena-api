@@ -302,7 +302,7 @@ router.get('/cardinfo', function (req, res) {
     db.serialize(function () {
         
 
-        db.get(`SELECT name , desc FROM  texts where id = ${id}`, function (err, row) {
+        db.get(`SELECT name , desc, str1, str2, str3 FROM  texts where id = ${id}`, function (err, row) {
             
             if (err) {
                 console.error(err)
@@ -312,10 +312,14 @@ router.get('/cardinfo', function (req, res) {
                 return res.status(404).send('card info not found!')
             }
 
+            result.id = id
             result.name = row.name
             result.desc = row.desc 
+            result.str1 = row.str1 
+            result.str2 = row.str2
+            result.str3 = row.str3 
 
-            db.get(`SELECT atk , def FROM  datas where id = ${id}`, function (err, row) {
+            db.get(`SELECT * FROM  datas where id = ${id}`, function (err, row) {
                 if (err) {
                     console.error(err)
                     return res.status(500).send('sqlite error!')
@@ -324,8 +328,16 @@ router.get('/cardinfo', function (req, res) {
                     return res.status(404).send('card info not found!')
                 }
 
+                result.ot = row.ot
+                result.alias = row.alias
+                result.setcode = row.setcode
+                result.type = row.type
                 result.atk = row.atk
                 result.def = row.def
+                result.level = row.level
+                result.race = row.race
+                result.attribute = row.attribute
+                result.category = row.category
                 res.json(result);
             });
            
