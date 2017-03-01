@@ -29,8 +29,8 @@ var config = {
 var pool = new pg.Pool(config)
 
 //sqlite 
-var dbEn = new sqlite3.Database('locales/en-US/cards.cdb');
-var dbCn = new sqlite3.Database('locales/zh-CN/cards.cdb');
+var dbEn = new sqlite3.Database('ygopro-database/locales/en-US/cards.cdb');
+var dbCn = new sqlite3.Database('ygopro-database/locales/zh-CN/cards.cdb');
 
 
 
