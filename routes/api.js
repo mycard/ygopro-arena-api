@@ -8,13 +8,12 @@ var eventproxy = require('eventproxy')
 var utils = require('../utils/utils')
 var sqlite3 = require('sqlite3').verbose();
 
-
-// create a config to configure both pooling behavior
-// and client options
-// note: all config is optional and the environment variables
-// will be read if the config is not present
-
 var config = require('../db.config')
+var cardinfo = require('../cardinfo')
+
+var attrOffset = 1010
+var raceOffset = 1020
+var typeOffset = 1050
 
 //this initializes a connection pool
 //it will keep idle connections open for a 30 seconds
@@ -24,8 +23,6 @@ var pool = new pg.Pool(config)
 //sqlite 
 var dbEn = new sqlite3.Database('ygopro-database/locales/en-US/cards.cdb');
 var dbCn = new sqlite3.Database('ygopro-database/locales/zh-CN/cards.cdb');
-
-
 
 pool.on('error', function (err, client) {
     // if an error is encountered by a client while it sits idle in the pool
@@ -290,13 +287,12 @@ router.get('/cardinfo', function (req, res) {
         db = dbEn
     }
 
-    var result = {} ;
+    var result = {};
 
     db.serialize(function () {
-        
 
         db.get(`SELECT name , desc, str1, str2, str3 FROM  texts where id = ${id}`, function (err, row) {
-            
+
             if (err) {
                 console.error(err)
                 return res.status(500).send('sqlite error!')
@@ -307,10 +303,10 @@ router.get('/cardinfo', function (req, res) {
 
             result.id = id
             result.name = row.name
-            result.desc = row.desc 
-            result.str1 = row.str1 
+            result.desc = row.desc
+            result.str1 = row.str1
             result.str2 = row.str2
-            result.str3 = row.str3 
+            result.str3 = row.str3
 
             db.get(`SELECT * FROM  datas where id = ${id}`, function (err, row) {
                 if (err) {
@@ -324,16 +320,18 @@ router.get('/cardinfo', function (req, res) {
                 result.ot = row.ot
                 result.alias = row.alias
                 result.setcode = row.setcode
-                result.type = row.type
                 result.atk = row.atk
                 result.def = row.def
                 result.level = row.level
-                result.race = row.race
-                result.attribute = row.attribute
                 result.category = row.category
+
+                result.type = getStringValueByMysticalNumber(lang,typeOffset,row.type)
+                result.race = getStringValueByMysticalNumber(lang,raceOffset,row.race)
+                result.attribute = getStringValueByMysticalNumber(lang,attrOffset,row.attribute)
+
                 res.json(result);
             });
-           
+
         });
     });
 });
@@ -534,6 +532,17 @@ createUser = function (username, ep, epEventName) {
             })
         })
     })
+}
+
+var getStringValueByMysticalNumber = function (lang, offset, number) {
+    for (var i = 0; i < 32; i++) {
+        if (number & (1 << i)) {
+            var index = offset + i
+            var key = index.toString()
+            return cardinfo[lang][key]
+        }
+    }
+    return ""
 }
 
 module.exports = router
