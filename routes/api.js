@@ -322,12 +322,25 @@ router.get('/cardinfo', function (req, res) {
                 result.setcode = row.setcode
                 result.atk = row.atk
                 result.def = row.def
-                result.level = row.level
+
+                if (row.level <= 12) {
+                    result.level = row.level
+                }else { 
+                    //转化为16位，0x01010004，前2位是左刻度，2-4是右刻度，末2位是等级
+                    var levelHex = parseInt(row.level, 10).toString(16);
+                    cardLevel = parseInt(levelHex.slice(-2), 16);
+                    cardLScale = parseInt(levelHex.slice(-8, -6), 16);
+                    cardRScale = parseInt(levelHex.slice(-6, -4), 16);
+                    result.level = cardLevel
+                    result.cardLScale = cardLScale
+                    result.cardRScale = cardRScale
+                }
+
                 result.category = row.category
 
-                result.type = getStringValueByMysticalNumber(lang,typeOffset,row.type)
-                result.race = getStringValueByMysticalNumber(lang,raceOffset,row.race)
-                result.attribute = getStringValueByMysticalNumber(lang,attrOffset,row.attribute)
+                result.type = getStringValueByMysticalNumber(lang, typeOffset, row.type)
+                result.race = getStringValueByMysticalNumber(lang, raceOffset, row.race)
+                result.attribute = getStringValueByMysticalNumber(lang, attrOffset, row.attribute)
 
                 res.json(result);
             });
