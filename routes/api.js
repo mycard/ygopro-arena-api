@@ -7,6 +7,7 @@ var pg = require('pg')
 var eventproxy = require('eventproxy')
 var utils = require('../utils/utils')
 var sqlite3 = require('sqlite3').verbose();
+var moment = require('moment')
 
 var config = require('../db.config')
 var cardinfo = require('../cardinfo')
@@ -325,7 +326,7 @@ router.get('/cardinfo', function (req, res) {
 
                 if (row.level <= 12) {
                     result.level = row.level
-                }else { 
+                } else {
                     //转化为16位，0x01010004，前2位是左刻度，2-4是右刻度，末2位是等级
                     var levelHex = parseInt(row.level, 10).toString(16);
                     cardLevel = parseInt(levelHex.slice(-2), 16);
@@ -345,6 +346,98 @@ router.get('/cardinfo', function (req, res) {
                 res.json(result);
             });
 
+        });
+    });
+});
+
+
+router.get('/deckinfo', function (req, res) {
+    var name = req.query.name
+
+    if (!name) {
+        return res.status(404).send('deck name is required!')
+    }
+
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+        if (err) {
+            return console.error('error fetching client from pool', err);
+        }
+
+        var sql = `SELECT * from deck_info where name = '${name}'`
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+            done()
+            var response = {};
+            if (!result || result.rowCount === 0) {
+                response.code = 404
+            } else {
+                response.code = 200
+                response.data = result.rows[0]
+            }
+            res.json(response);
+        });
+    });
+});
+
+router.post('/deckinfo', function (req, res) {
+
+    let user = req.body.user;
+    let name = req.body.name;
+    let desc = req.body.desc;
+    let img_url = req.body.url;
+
+    let isNew = req.body.isNew;
+
+    console.log("user is", user)
+    console.log("name is", name)
+    console.log("desc is", desc)
+    console.log("img_url is", img_url)
+    console.log("isNew is", isNew)
+    console.log("isNew is", typeof isNew)
+
+    if (!name) {
+        return res.status(404).send('deck name is required!')
+    }
+
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+        if (err) {
+            return console.error('error fetching client from pool', err);
+        }
+
+        var sql;
+        if (isNew === "true") {
+            var start_time = moment().format('YYYY-MM-DD HH:mm')
+            sql = `insert into deck_info (name, content, url, start_time) values (
+                    '${name}',
+                    '${desc}',
+                    '${img_url}',
+                    '${start_time}'
+                    )`;
+        } else {
+            var end_time = moment().format('YYYY-MM-DD HH:mm')
+            sql = `update deck_info set 
+                    content = '${desc}', 
+                    url = '${img_url}', 
+                    end_time = '${end_time}'
+                    where name = '${name}'`;
+        }
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+            var response = {};
+            if (err) {
+                response.code = 500;
+            } else {
+                response.code = 200;
+            }
+            res.json(response);
         });
     });
 });
