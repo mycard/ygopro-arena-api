@@ -397,7 +397,6 @@ router.post('/deckinfo', function (req, res) {
     console.log("desc is", desc)
     console.log("img_url is", img_url)
     console.log("isNew is", isNew)
-    console.log("isNew is", typeof isNew)
 
     if (!name) {
         return res.status(404).send('deck name is required!')
@@ -431,6 +430,7 @@ router.post('/deckinfo', function (req, res) {
         console.log(sql);
 
         client.query(sql, function (err, result) {
+            done();
             var response = {};
             if (err) {
                 response.code = 500;
