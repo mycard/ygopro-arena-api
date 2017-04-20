@@ -1,8 +1,6 @@
 "use strict"
 
 
-
-
 var superagent = require('superagent')
 var mement = require('moment')
 
