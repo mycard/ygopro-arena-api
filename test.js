@@ -4,11 +4,11 @@
 
 
 var superagent = require('superagent')
+var mement = require('moment')
 
 
-
-var url = 'https://mycard.moe/ygopro/api/score'
-// var url = 'http://localhost:3000/api/score'
+// var url = 'https://mycard.moe/ygopro/api/score'
+var url = 'http://localhost:3000/api/score'
 superagent
     .post(url)
     .send({
@@ -17,8 +17,8 @@ superagent
         usernameB: "zh99998",
         userscoreA: 1,
         userscoreB: 2,
-        start: '2016-12-19T12:31:13+08:00',
-        end: '2016-12-19T12:41:13+08:00',
+        start: mement().format(),
+        end: mement().format(),
         arena: 'athletic' // 'athletic' 竞技 or 'entertain' 娱乐
     })
     .end(function (err, res) {

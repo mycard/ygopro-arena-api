@@ -35,6 +35,43 @@ pool.on('error', function (err, client) {
     console.error('idle client error', err.message, err.stack)
 })
 
+
+// cron job 
+
+/**
+	*    *    *    *    *    *
+	┬    ┬    ┬    ┬    ┬    ┬
+	│    │    │    │    │    |
+	│    │    │    │    │    └ day of week (0 - 7) (0 or 7 is Sun)
+	│    │    │    │    └───── month (1 - 12)
+	│    │    │    └────────── day of month (1 - 31)
+	│    │    └─────────────── hour (0 - 23)
+	│    └──────────────────── minute (0 - 59)
+	└───────────────────────── second (0 - 59, OPTIONAL)
+ */
+var schedule = require('node-schedule');
+
+var j = schedule.scheduleJob('1 0 1 * *', function () {
+    console.log('The scheduleJob run on first day of every month!');
+
+    pool.connect(function (err, client, done) {
+        if (err) {
+            return console.error('error fetching client from pool', err);
+        }
+
+        var sql = `update user_info set pt = (pt - (pt - 500) * 0.4 )
+                    where and pt > 500`
+
+        client.query(sql, function (err, result) {
+            done()
+            if (err) {
+                return console.error('error running monthly scheduleJob', err);
+            }
+            console.log(result)
+        });
+    })
+});
+
 // 数据迁移 rating_index => user_info
 // router.get('/mr',function(req,res){
 //     pool.connect(function (err, client, done) {
@@ -107,17 +144,26 @@ router.post('/score', function (req, res) {
 
             // athletic = 竞技  entertain = 娱乐 
             if (arena === 'athletic') {
+
+                // select count(*) from battle_history where (usernameA = '爱吉' OR usernameB = '爱吉') and start_time > date '2017-02-09'
+                // 日首胜  每日0点开始计算  日首胜的话是额外增加固定4DP
+                var firstWin = false
+                var winner = "xxxxx"
+                var today = moment().format('YYYY-MM-DD')
+
                 // 真实得分 S（胜=1分，和=0.5分，负=0分）
                 let sa = 0, sb = 0
                 if (userscoreA > userscoreB) {
                     sa = 1
                     paramA['athletic_win'] = 1
                     paramB['athletic_lose'] = 1
+                    winner = usernameA
                 }
                 if (userscoreA < userscoreB) {
                     sb = 1
                     paramA['athletic_lose'] = 1
                     paramB['athletic_win'] = 1
+                    winner = usernameB
                 }
                 if (userscoreA === userscoreB) {
                     sa = 0.5
@@ -126,24 +172,46 @@ router.post('/score', function (req, res) {
                     paramB['athletic_draw'] = 1
                 }
 
-                let ptResult = utils.getEloScore(userA.pt, userB.pt, sa, sb)
-                let expResult = utils.getExpScore(userA.exp, userB.exp, userscoreA, userscoreB)
+                var queryFirsrWinSql = `select count(*) from battle_history where (usernameA = '${winner}' OR usernameB = '${winner}') and start_time > date '${today}' `
 
-                queries.push(`update user_info set exp = ${expResult.expA}, pt = ${ptResult.ptA}, 
+                client.query(queryFirsrWinSql, function (err, result) {
+                    done()
+                    var total = 0;
+                    if (!err) {
+                        total = result.rows[0].count - 0
+                        if (total == 0) {
+                            firstWin = true
+                        }
+                    }
+                    let ptResult = utils.getEloScore(userA.pt, userB.pt, sa, sb)
+                    let expResult = utils.getExpScore(userA.exp, userB.exp, userscoreA, userscoreB)
+
+                    if (firstWin) {
+                        if (winner === usernameA) {
+                            ptResult.ptA += 4
+                            console.log(usernameA,'首胜多加4DP')
+                        }
+                        if (winner === usernameB) {
+                            ptResult.ptB += 4
+                            console.log(usernameB,'首胜多加4DP')
+                        }
+                    }
+
+                    queries.push(`update user_info set exp = ${expResult.expA}, pt = ${ptResult.ptA}, 
                     athletic_win = athletic_win + ${paramA.athletic_win}, 
                     athletic_lose = athletic_lose + ${paramA.athletic_lose}, 
                     athletic_draw = athletic_draw + ${paramA.athletic_draw}, 
                     athletic_all = athletic_all + ${paramA.athletic_all}
                     where username = '${userA.username}'`)
 
-                queries.push(`update user_info set exp = ${expResult.expB}, pt = ${ptResult.ptB}, 
+                    queries.push(`update user_info set exp = ${expResult.expB}, pt = ${ptResult.ptB}, 
                     athletic_win = athletic_win + ${paramB.athletic_win}, 
                     athletic_lose = athletic_lose + ${paramB.athletic_lose}, 
                     athletic_draw = athletic_draw + ${paramB.athletic_draw}, 
                     athletic_all = athletic_all + ${paramB.athletic_all}
                     where username = '${userB.username}'`)
 
-                queries.push(`insert into battle_history values (
+                    queries.push(`insert into battle_history values (
                     '${userA.username}',
                     '${userB.username}',
                     '${userscoreA}',
@@ -160,6 +228,17 @@ router.post('/score', function (req, res) {
                     '${start}',
                     '${end}'
                     )`)
+
+                    queries.map(function (q) {
+                        // console.log(q)
+                        return client.query(q)
+                    }).pop().on('end', function () {
+                        console.log("finished update score !")
+                        done()
+                    })
+                });
+
+
 
             } else {
                 let expResult = utils.getExpScore(userA.exp, userB.exp, userscoreA, userscoreB)
@@ -209,15 +288,15 @@ router.post('/score', function (req, res) {
                     '${end}'
                     )`)
 
-            }
+                queries.map(function (q) {
+                    // console.log(q)
+                    return client.query(q)
+                }).pop().on('end', function () {
+                    console.log("finished update score !")
+                    done()
+                })
 
-            queries.map(function (q) {
-                // console.log(q)
-                return client.query(q)
-            }).pop().on('end', function () {
-                console.log("finished update score !")
-                done()
-            })
+            }
 
         })
 
