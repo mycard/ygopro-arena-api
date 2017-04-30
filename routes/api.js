@@ -50,8 +50,8 @@ pool.on('error', function (err, client) {
 	└───────────────────────── second (0 - 59, OPTIONAL)
  */
 var schedule = require('node-schedule');
-
-var j = schedule.scheduleJob('1 0 1 * *', function () {
+// 每月的1日0点30分30秒触发 ：'30 30 0 1 * *'
+var j = schedule.scheduleJob('30 30 0 1 * *', function () {
     console.log('The scheduleJob run on first day of every month!');
 
     pool.connect(function (err, client, done) {
