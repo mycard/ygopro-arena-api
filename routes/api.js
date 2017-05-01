@@ -52,7 +52,7 @@ pool.on('error', function (err, client) {
 var schedule = require('node-schedule');
 // 每月的1日0点30分30秒触发 ：'30 30 0 1 * *'
 var j = schedule.scheduleJob('30 30 0 1 * *', function () {
-    console.log('The scheduleJob run on first day of every month!');
+    console.log('The scheduleJob run on first day of every month!', moment().format('YYYY-MM-DD'));
 
     pool.connect(function (err, client, done) {
         if (err) {
@@ -189,11 +189,11 @@ router.post('/score', function (req, res) {
                     if (firstWin) {
                         if (winner === usernameA) {
                             ptResult.ptA += 4
-                            console.log(usernameA,'首胜多加4DP')
+                            console.log(usernameA,'首胜多加4DP', moment().format('YYYY-MM-DD'))
                         }
                         if (winner === usernameB) {
                             ptResult.ptB += 4
-                            console.log(usernameB,'首胜多加4DP')
+                            console.log(usernameB,'首胜多加4DP', moment().format('YYYY-MM-DD'))
                         }
                     }
 
