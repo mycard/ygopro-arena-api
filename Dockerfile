@@ -5,5 +5,9 @@ WORKDIR /usr/src/app
 COPY package.json /usr/src/app/
 RUN npm install
 COPY . /usr/src/app
+
+# 设置时区
+RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
 EXPOSE 3000
 CMD [ "npm", "start" ]

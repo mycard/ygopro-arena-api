@@ -60,7 +60,7 @@ var j = schedule.scheduleJob('30 30 0 1 * *', function () {
         }
 
         var sql = `update user_info set pt = (pt - (pt - 500) * 0.4 )
-                    where and pt > 500`
+                    where pt > 500`
 
         client.query(sql, function (err, result) {
             done()
