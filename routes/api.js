@@ -52,7 +52,7 @@ pool.on('error', function (err, client) {
 var schedule = require('node-schedule');
 // 每月的1日0点30分30秒触发 ：'30 30 0 1 * *'
 var j = schedule.scheduleJob('30 30 0 1 * *', function () {
-    console.log('The scheduleJob run on first day of every month!', moment().format('YYYY-MM-DD'));
+    console.log('The scheduleJob run on first day of every month!', moment().format('YYYY-MM-DD HH:mm'));
 
     pool.connect(function (err, client, done) {
         if (err) {
@@ -172,7 +172,7 @@ router.post('/score', function (req, res) {
                     paramB['athletic_draw'] = 1
                 }
 
-                var queryFirsrWinSql = `select count(*) from battle_history where (usernameA = '${winner}' OR usernameB = '${winner}') and start_time > date '${today}' `
+                var queryFirsrWinSql = `select count(*) from battle_history where ( (usernameA = '${winner}' AND  userscorea > userscoreb ) OR (usernameB = '${winner}' AND userscoreb > userscorea) ) and start_time > date '${today}' `
 
                 client.query(queryFirsrWinSql, function (err, result) {
                     done()
@@ -189,11 +189,11 @@ router.post('/score', function (req, res) {
                     if (firstWin) {
                         if (winner === usernameA) {
                             ptResult.ptA += 4
-                            console.log(usernameA,'首胜多加4DP', moment().format('YYYY-MM-DD'))
+                            console.log(usernameA, '首胜多加4DP', moment().format('YYYY-MM-DD HH:mm'))
                         }
                         if (winner === usernameB) {
                             ptResult.ptB += 4
-                            console.log(usernameB,'首胜多加4DP', moment().format('YYYY-MM-DD'))
+                            console.log(usernameB, '首胜多加4DP', moment().format('YYYY-MM-DD HH:mm'))
                         }
                     }
 
@@ -432,6 +432,7 @@ router.get('/cardinfo', function (req, res) {
 
 router.get('/deckinfo', function (req, res) {
     var name = req.query.name
+    var version = req.query.version
 
     if (!name) {
         return res.status(404).send('deck name is required!')
@@ -445,37 +446,55 @@ router.get('/deckinfo', function (req, res) {
         }
 
         var sql = `SELECT * from deck_info where name = '${name}'`
+        if (version) {
+            sql = `SELECT * from deck_info_history where name = '${name}' and id= ${version}`
+        }
 
         console.log(sql);
 
         client.query(sql, function (err, result) {
             done()
+
             var response = {};
             if (!result || result.rowCount === 0) {
                 response.code = 404
+                res.json(response);
             } else {
                 response.code = 200
                 response.data = result.rows[0]
+
+                sql = `SELECT * from deck_info_history where name = '${name}' order by start_time desc`
+                console.log(sql);
+                client.query(sql, function (err, result) {
+                    done()
+
+                    response.history = result.rows
+                    res.json(response);
+                });
             }
-            res.json(response);
+
         });
     });
 });
 
 router.post('/deckinfo', function (req, res) {
 
-    let user = req.body.user;
+    let author = req.body.user;
+    let title = req.body.title;
     let name = req.body.name;
     let desc = req.body.desc;
     let img_url = req.body.url;
 
     let isNew = req.body.isNew;
 
-    console.log("user is", user)
-    console.log("name is", name)
-    console.log("desc is", desc)
-    console.log("img_url is", img_url)
-    console.log("isNew is", isNew)
+    var content = {
+        author: author,
+        title: title,
+        desc: desc,
+        url: img_url
+    }
+
+    var contentStr = JSON.stringify(content);
 
     if (!name) {
         return res.status(404).send('deck name is required!')
@@ -489,20 +508,18 @@ router.post('/deckinfo', function (req, res) {
         }
 
         var sql;
+        var now = moment().format('YYYY-MM-DD HH:mm')
         if (isNew === "true") {
-            var start_time = moment().format('YYYY-MM-DD HH:mm')
-            sql = `insert into deck_info (name, content, url, start_time) values (
+
+            sql = `insert into deck_info (name, content, start_time) values (
                     '${name}',
-                    '${desc}',
-                    '${img_url}',
-                    '${start_time}'
+                    '${contentStr}',
+                    '${now}'
                     )`;
         } else {
-            var end_time = moment().format('YYYY-MM-DD HH:mm')
             sql = `update deck_info set 
-                    content = '${desc}', 
-                    url = '${img_url}', 
-                    end_time = '${end_time}'
+                    content = '${contentStr}', 
+                    end_time = '${now}'
                     where name = '${name}'`;
         }
 
@@ -510,13 +527,25 @@ router.post('/deckinfo', function (req, res) {
 
         client.query(sql, function (err, result) {
             done();
-            var response = {};
-            if (err) {
-                response.code = 500;
-            } else {
-                response.code = 200;
-            }
-            res.json(response);
+            sql = `insert into deck_info_history (name, content, start_time) values (
+                    '${name}',
+                    '${contentStr}',
+                    '${now}'
+                    )`;
+            console.log(sql);
+
+            client.query(sql, function (err, result) {
+                done();
+
+                var response = {};
+                if (err) {
+                    response.code = 500;
+                } else {
+                    response.code = 200;
+                }
+                res.json(response);
+            });
+
         });
     });
 });
