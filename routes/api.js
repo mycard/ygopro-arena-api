@@ -72,6 +72,10 @@ var j = schedule.scheduleJob('30 30 0 1 * *', function () {
     })
 });
 
+var Filter = require('bad-words-chinese');
+var dirtyWords = require('../dirtyWordsChinese.json');
+var filter = new Filter({ chineseList: dirtyWords.words });
+
 // 数据迁移 rating_index => user_info
 // router.get('/mr',function(req,res){
 //     pool.connect(function (err, client, done) {
@@ -445,7 +449,7 @@ router.get('/deckinfo', function (req, res) {
             return console.error('error fetching client from pool', err);
         }
 
-        var sql = `SELECT * from deck_info where name = '${name}'`
+        var sql = `SELECT * from deck_info where name like  '%${name}%'`
         if (version) {
             sql = `SELECT * from deck_info_history where name = '${name}' and id= ${version}`
         }
@@ -463,7 +467,9 @@ router.get('/deckinfo', function (req, res) {
                 response.code = 200
                 response.data = result.rows[0]
 
-                sql = `SELECT * from deck_info_history where name = '${name}' order by start_time desc`
+                var resName = response.data.name
+
+                sql = `SELECT * from deck_info_history where name = '${resName}' order by start_time desc`
                 console.log(sql);
                 client.query(sql, function (err, result) {
                     done()
@@ -488,9 +494,9 @@ router.post('/deckinfo', function (req, res) {
     let isNew = req.body.isNew;
 
     var content = {
-        author: author,
-        title: title,
-        desc: desc,
+        author: filter.clean(author),
+        title: filter.clean(title),
+        desc: filter.clean(desc),
         url: img_url
     }
 
