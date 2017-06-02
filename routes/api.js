@@ -483,6 +483,13 @@ router.get('/deckinfo', function (req, res) {
     });
 });
 
+
+
+var file = require("./file.js");  
+
+router.post('/upload', file.upload);
+router.get('/download/:id', file.download); 
+
 router.post('/deckinfo', function (req, res) {
 
     let author = req.body.user;
@@ -641,6 +648,7 @@ router.get('/user', function (req, res) {
     // to run a query we can acquire a client from the pool,
     // run a query on the client, and then return the client to the pool
     pool.connect(function (err, client, done) {
+        
         if (err) {
             return console.error('error fetching client from pool', err);
         }
@@ -666,6 +674,7 @@ router.get('/user', function (req, res) {
 
         if (!username) {
             // return res.status(404).send('username can not be null')
+            done();
             return res.json(resultData)
         }
 

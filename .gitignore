@@ -8,3 +8,4 @@ test/e2e/reports
 db.config.js
 test.js
 db.sql
+upload/
