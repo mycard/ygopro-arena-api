@@ -8,6 +8,7 @@ var eventproxy = require('eventproxy')
 var utils = require('../utils/utils')
 var sqlite3 = require('sqlite3').verbose();
 var moment = require('moment')
+var _ = require('lodash')
 
 var config = require('../db.config')
 var cardinfo = require('../cardinfo')
@@ -473,9 +474,18 @@ router.get('/deckinfo', function (req, res) {
                 console.log(sql);
                 client.query(sql, function (err, result) {
                     done()
-
                     response.history = result.rows
-                    res.json(response);
+
+                    sql = `SELECT * from deck_demo where name = '${resName}' order by create_time desc`
+                    console.log(sql);
+                    client.query(sql, function (err, result) {
+                        done()
+                        response.demo = _.map(result.rows, function (row) {
+                            row.create_time = moment(row.create_time).format('YYYY-MM-DD')
+                            return row
+                        })
+                        res.json(response);
+                    });
                 });
             }
 
@@ -485,10 +495,54 @@ router.get('/deckinfo', function (req, res) {
 
 
 
-var file = require("./file.js");  
+var file = require("./file.js");
 
 router.post('/upload', file.upload);
-router.get('/download/:id', file.download); 
+router.get('/download/:id', file.download);
+
+
+//卡组范例提交
+
+router.post('/deckdemo', function (req, res) {
+
+    let author = req.body.user;
+    let title = req.body.title;
+    let name = req.body.name;
+    let img_url = req.body.url;
+    let file = req.body.file || "";
+
+    pool.connect(function (err, client, done) {
+        if (err) {
+            return console.error('error fetching client from pool', err);
+        }
+
+        var now = moment().format('YYYY-MM-DD HH:mm')
+
+        var sql = `insert into deck_demo (name, author, url, title, file, create_time) values (
+                    '${name}',
+                    '${author}',
+                    '${img_url}',
+                    '${title}',
+                    '${file}',
+                    '${now}'
+                    )`;
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+            done();
+
+            var response = {};
+            if (err) {
+                response.code = 500;
+            } else {
+                response.code = 200;
+            }
+            res.json(response);
+        });
+    });
+
+})
 
 router.post('/deckinfo', function (req, res) {
 
@@ -648,7 +702,7 @@ router.get('/user', function (req, res) {
     // to run a query we can acquire a client from the pool,
     // run a query on the client, and then return the client to the pool
     pool.connect(function (err, client, done) {
-        
+
         if (err) {
             return console.error('error fetching client from pool', err);
         }

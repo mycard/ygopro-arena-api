@@ -15,9 +15,6 @@ exports.upload = function (req, res, next) {
             return res.status(500).send('upload image fail!')
         }
 
-        console.log(files)
-        console.log(files.file.path)
-
         var response = {};
         if (err) {
             response.code = 500;
@@ -25,6 +22,7 @@ exports.upload = function (req, res, next) {
             response.code = 200;
             response.path = files.file.path;
         }
+        
         res.json(response);
     });
 };
