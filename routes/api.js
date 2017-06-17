@@ -231,7 +231,9 @@ router.post('/score', function (req, res) {
                     '${userB.pt}',
                     '${arena}',
                     '${start}',
-                    '${end}'
+                    '${end}',
+                    '${winner}',
+                    '${firstWin}',
                     )`)
 
                     queries.map(function (q) {
