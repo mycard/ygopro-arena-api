@@ -146,14 +146,17 @@ router.post('/score', function (req, res) {
                 entertain_draw: 0,
                 entertain_all: 1,
             }
+             var winner = "none"
+            var firstWin = false
+
 
             // athletic = 竞技  entertain = 娱乐 
             if (arena === 'athletic') {
 
                 // select count(*) from battle_history where (usernameA = '爱吉' OR usernameB = '爱吉') and start_time > date '2017-02-09'
                 // 日首胜  每日0点开始计算  日首胜的话是额外增加固定4DP
-                var firstWin = false
-                var winner = "xxxxx"
+               
+               
                 var today = moment().format('YYYY-MM-DD')
 
                 // 真实得分 S（胜=1分，和=0.5分，负=0分）
@@ -233,7 +236,7 @@ router.post('/score', function (req, res) {
                     '${start}',
                     '${end}',
                     '${winner}',
-                    '${firstWin}',
+                    '${firstWin}'
                     )`)
 
                     queries.map(function (q) {
@@ -253,10 +256,12 @@ router.post('/score', function (req, res) {
                 if (userscoreA > userscoreB) {
                     paramA['entertain_win'] = 1
                     paramB['entertain_lose'] = 1
+                     winner = usernameA
                 }
                 if (userscoreA < userscoreB) {
                     paramA['entertain_lose'] = 1
                     paramB['entertain_win'] = 1
+                     winner = usernameB
                 }
                 if (userscoreA === userscoreB) {
                     paramA['entertain_draw'] = 1
@@ -277,6 +282,8 @@ router.post('/score', function (req, res) {
                     entertain_all = entertain_all + ${paramB.entertain_all}
                     where username = '${userB.username}'`)
 
+             
+
                 queries.push(`insert into battle_history values (
                     '${userA.username}',
                     '${userB.username}',
@@ -292,7 +299,9 @@ router.post('/score', function (req, res) {
                     '${userB.pt}',
                     '${arena}',
                     '${start}',
-                    '${end}'
+                    '${end}',
+                    '${winner}',
+                    '${firstWin}'
                     )`)
 
                 queries.map(function (q) {
