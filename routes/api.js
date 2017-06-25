@@ -561,6 +561,8 @@ router.post('/deckinfo', function (req, res) {
     let title = req.body.title;
     let name = req.body.name;
     let desc = req.body.desc;
+    let strategy = req.body.strategy;
+    let reference = req.body.reference;
     let img_url = req.body.url;
 
     let isNew = req.body.isNew;
@@ -569,6 +571,8 @@ router.post('/deckinfo', function (req, res) {
         author: filter.clean(author),
         title: filter.clean(title),
         desc: filter.clean(desc),
+        strategy: filter.clean(strategy),
+        reference: filter.clean(reference),
         url: img_url
     }
 
