@@ -17,6 +17,19 @@ var attrOffset = 1010
 var raceOffset = 1020
 var typeOffset = 1050
 
+var constants = {
+    "LINK_MARKERS": {
+        "LINK_MARKER_BOTTOM_LEFT": 1,
+        "LINK_MARKER_BOTTOM": 2,
+        "LINK_MARKER_BOTTOM_RIGHT": 4,
+        "LINK_MARKER_LEFT": 8,
+        "LINK_MARKER_RIGHT": 32,
+        "LINK_MARKER_TOP_LEFT": 64,
+        "LINK_MARKER_TOP": 128,
+        "LINK_MARKER_TOP_RIGHT": 256
+    }
+}
+
 //this initializes a connection pool
 //it will keep idle connections open for a 30 seconds
 //and set a limit of maximum 10 idle clients
@@ -146,7 +159,7 @@ router.post('/score', function (req, res) {
                 entertain_draw: 0,
                 entertain_all: 1,
             }
-             var winner = "none"
+            var winner = "none"
             var firstWin = false
 
 
@@ -155,8 +168,8 @@ router.post('/score', function (req, res) {
 
                 // select count(*) from battle_history where (usernameA = '爱吉' OR usernameB = '爱吉') and start_time > date '2017-02-09'
                 // 日首胜  每日0点开始计算  日首胜的话是额外增加固定4DP
-               
-               
+
+
                 var today = moment().format('YYYY-MM-DD')
 
                 // 真实得分 S（胜=1分，和=0.5分，负=0分）
@@ -256,12 +269,12 @@ router.post('/score', function (req, res) {
                 if (userscoreA > userscoreB) {
                     paramA['entertain_win'] = 1
                     paramB['entertain_lose'] = 1
-                     winner = usernameA
+                    winner = usernameA
                 }
                 if (userscoreA < userscoreB) {
                     paramA['entertain_lose'] = 1
                     paramB['entertain_win'] = 1
-                     winner = usernameB
+                    winner = usernameB
                 }
                 if (userscoreA === userscoreB) {
                     paramA['entertain_draw'] = 1
@@ -282,7 +295,7 @@ router.post('/score', function (req, res) {
                     entertain_all = entertain_all + ${paramB.entertain_all}
                     where username = '${userB.username}'`)
 
-             
+
 
                 queries.push(`insert into battle_history values (
                     '${userA.username}',
@@ -417,7 +430,31 @@ router.get('/cardinfo', function (req, res) {
                 result.alias = row.alias
                 result.setcode = row.setcode
                 result.atk = row.atk
+
                 result.def = row.def
+
+                // 电子界 特殊处理防御
+                if (row.race == 16777216) {
+
+                    if (result.def & constants.LINK_MARKERS.LINK_MARKER_TOP_LEFT)
+                        result.name += "[↖]";
+                    if (result.def & constants.LINK_MARKERS.LINK_MARKER_TOP)
+                        result.name += "[↑]";
+                    if (result.def & constants.LINK_MARKERS.LINK_MARKER_TOP_RIGHT)
+                        result.name += "[↗]";
+                    if (result.def & constants.LINK_MARKERS.LINK_MARKER_LEFT)
+                        result.name += "[←]";
+                    if (result.def & constants.LINK_MARKERS.LINK_MARKER_RIGHT)
+                        result.name += "[→]";
+                    if (result.def & constants.LINK_MARKERS.LINK_MARKER_BOTTOM_LEFT)
+                        result.name += "[↙]";
+                    if (result.def & constants.LINK_MARKERS.LINK_MARKER_BOTTOM)
+                        result.name += "[↓]";
+                    if (result.def & constants.LINK_MARKERS.LINK_MARKER_BOTTOM_RIGHT)
+                        result.name += "[↘]";
+
+                    result.def = '-'
+                } 
 
                 if (row.level <= 12) {
                     result.level = row.level

@@ -9,3 +9,5 @@ db.config.js
 test.js
 db.sql
 upload/
+plan.md
+query.sql
