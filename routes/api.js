@@ -169,7 +169,6 @@ router.post('/score', function (req, res) {
                 // select count(*) from battle_history where (usernameA = '爱吉' OR usernameB = '爱吉') and start_time > date '2017-02-09'
                 // 日首胜  每日0点开始计算  日首胜的话是额外增加固定4DP
 
-
                 var today = moment().format('YYYY-MM-DD')
 
                 // 真实得分 S（胜=1分，和=0.5分，负=0分）
@@ -206,6 +205,19 @@ router.post('/score', function (req, res) {
                     }
                     let ptResult = utils.getEloScore(userA.pt, userB.pt, sa, sb)
                     let expResult = utils.getExpScore(userA.exp, userB.exp, userscoreA, userscoreB)
+
+                    // 3分钟以内结束的决斗，胜者不加DP，负者照常扣DP。 平局不扣DP不加DP   : 把开始时间+3分钟，如果加完比结束时间靠后，说明比赛时间不足三分钟
+                    var isLess3Min = moment(start).add(3, 'm').isAfter(moment(end));
+                    if(isLess3Min){
+                        if (winner === usernameA) {
+                            ptResult.ptA = userA.pt
+                            console.log(usernameA, '当局有人存在早退，胜利不加分', moment().format('YYYY-MM-DD HH:mm'))
+                        }
+                        if (winner === usernameB) {
+                            ptResult.ptB = userB.pt
+                            console.log(usernameB, '当局有人存在早退，胜利不加分', moment().format('YYYY-MM-DD HH:mm'))
+                        }
+                    }
 
                     if (firstWin) {
                         if (winner === usernameA) {

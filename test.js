@@ -5,8 +5,8 @@ var superagent = require('superagent')
 var mement = require('moment')
 
 
- var url = 'https://mycard.moe/ygopro/api/score'
-//var url = 'http://localhost:3000/api/score'
+// var url = 'https://mycard.moe/ygopro/api/score'
+var url = 'http://localhost:3000/api/score'
 console.log( mement().format())
 superagent
     .post(url)
@@ -14,11 +14,11 @@ superagent
         accesskey: "XnvGjNG8jttfjYWhtqtgRfWBtyEwjMaF",
         usernameA: "Joe1991",
         usernameB: "zh99998",
-        userscoreA: 1,
-        userscoreB: 2,
+        userscoreA: 2,
+        userscoreB: 1,
         start: mement().format(),
-        end: mement().format(),
-        arena: 'entertain' // 'athletic' 竞技 or 'entertain' 娱乐
+        end: mement().add(4,'m').format(),
+        arena: 'athletic' // 'athletic' 竞技 or 'entertain' 娱乐
     })
     .end(function (err, res) {
         if (err) {

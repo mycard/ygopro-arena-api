@@ -2,6 +2,12 @@
 
 let Utils = {
     getEloScore: function getEloScore(rA, rB, sA, sB) {
+
+        //17.07.18 增加规则，平局不加分.
+        if(sA === sB){
+            return { ptA: rA, ptB: rB }
+        }
+
         let k = 32
         let eA = 1 / (1 + Math.pow(10, (rB - rA) / 400))
         let eB = 1 / (1 + Math.pow(10, (rA - rB) / 400))
