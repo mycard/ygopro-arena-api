@@ -192,14 +192,14 @@ router.post('/score', function (req, res) {
                     paramB['athletic_draw'] = 1
                 }
 
-                var queryFirsrWinSql = `select count(*) from battle_history where ( (usernameA = '${winner}' AND  userscorea > userscoreb ) OR (usernameB = '${winner}' AND userscoreb > userscorea) ) and start_time > date '${today}' `
+                var queryFirsrWinSql = `select count(*) from battle_history where type ='athletic' and ( (usernameA = '${winner}' AND  userscorea > userscoreb ) OR (usernameB = '${winner}' AND userscoreb > userscorea) ) and start_time > date '${today}' `
 
                 client.query(queryFirsrWinSql, function (err, result) {
                     done()
                     var total = 0;
                     if (!err) {
                         total = result.rows[0].count - 0
-                        if (total == 0) {
+                        if (winner !== "none" && total == 0) {
                             firstWin = true
                         }
                     }
@@ -208,7 +208,7 @@ router.post('/score', function (req, res) {
 
                     // 3分钟以内结束的决斗，胜者不加DP，负者照常扣DP。 平局不扣DP不加DP   : 把开始时间+3分钟，如果加完比结束时间靠后，说明比赛时间不足三分钟
                     var isLess3Min = moment(start).add(3, 'm').isAfter(moment(end));
-                    if(isLess3Min){
+                    if (isLess3Min) {
                         if (winner === usernameA) {
                             ptResult.ptA = userA.pt
                             console.log(usernameA, '当局有人存在早退，胜利不加分', moment().format('YYYY-MM-DD HH:mm'))
@@ -466,7 +466,7 @@ router.get('/cardinfo', function (req, res) {
                         result.name += "[↘]";
 
                     result.def = '-'
-                } 
+                }
 
                 if (row.level <= 12) {
                     result.level = row.level

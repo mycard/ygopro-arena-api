@@ -14,10 +14,10 @@ superagent
         accesskey: "XnvGjNG8jttfjYWhtqtgRfWBtyEwjMaF",
         usernameA: "Joe1991",
         usernameB: "zh99998",
-        userscoreA: 2,
+        userscoreA: 1,
         userscoreB: 1,
         start: mement().format(),
-        end: mement().add(4,'m').format(),
+        end: mement().add(6,'m').format(),
         arena: 'athletic' // 'athletic' 竞技 or 'entertain' 娱乐
     })
     .end(function (err, res) {
