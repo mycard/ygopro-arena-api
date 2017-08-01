@@ -18,6 +18,33 @@ var raceOffset = 1020
 var typeOffset = 1050
 
 var constants = {
+    "TYPES": {
+        "TYPE_MONSTER": 1,
+        "TYPE_SPELL": 2,
+        "TYPE_TRAP": 4,
+        "TYPE_NORMAL": 16,
+        "TYPE_EFFECT": 32,
+        "TYPE_FUSION": 64,
+        "TYPE_RITUAL": 128,
+        "TYPE_TRAPMONSTER": 256,
+        "TYPE_SPIRIT": 512,
+        "TYPE_UNION": 1024,
+        "TYPE_DUAL": 2048,
+        "TYPE_TUNER": 4096,
+        "TYPE_SYNCHRO": 8192,
+        "TYPE_TOKEN": 16384,
+        "TYPE_QUICKPLAY": 65536,
+        "TYPE_CONTINUOUS": 131072,
+        "TYPE_EQUIP": 262144,
+        "TYPE_FIELD": 524288,
+        "TYPE_COUNTER": 1048576,
+        "TYPE_FLIP": 2097152,
+        "TYPE_TOON": 4194304,
+        "TYPE_XYZ": 8388608,
+        "TYPE_PENDULUM": 16777216,
+        "TYPE_SPSUMMON": 33554432,
+        "TYPE_LINK": 67108864
+    },
     "LINK_MARKERS": {
         "LINK_MARKER_BOTTOM_LEFT": 1,
         "LINK_MARKER_BOTTOM": 2,
@@ -448,6 +475,34 @@ router.get('/cardinfo', function (req, res) {
                 // 电子界 特殊处理防御
                 if (row.race == 16777216) {
 
+
+                }
+
+                var cardLevel = "";
+                var cardLScale = "";
+                var cardRScale = "";
+
+                if (row.level <= 12) {
+                    result.level = row.level
+                } else {
+                    //转化为16位，0x01010004，前2位是左刻度，2-4是右刻度，末2位是等级
+                    var levelHex = parseInt(row.level, 10).toString(16);
+                    cardLevel = parseInt(levelHex.slice(-2), 16);
+                    cardLScale = parseInt(levelHex.slice(-8, -6), 16);
+                    cardRScale = parseInt(levelHex.slice(-6, -4), 16);
+                    result.level = cardLevel
+                    result.cardLScale = cardLScale
+                    result.cardRScale = cardRScale
+                }
+
+
+                if (!(row.type & constants.TYPES.TYPE_LINK)) {
+                    result.name += " ";
+                    result.name += " ";
+                } else {
+                    // result.name+="[LINK-" + cardLevel + "]";
+                    // result.name += " " + (result.atk < 0 ? "?" : result.atk) + "/- ";
+
                     if (result.def & constants.LINK_MARKERS.LINK_MARKER_TOP_LEFT)
                         result.name += "[↖]";
                     if (result.def & constants.LINK_MARKERS.LINK_MARKER_TOP)
@@ -466,19 +521,6 @@ router.get('/cardinfo', function (req, res) {
                         result.name += "[↘]";
 
                     result.def = '-'
-                }
-
-                if (row.level <= 12) {
-                    result.level = row.level
-                } else {
-                    //转化为16位，0x01010004，前2位是左刻度，2-4是右刻度，末2位是等级
-                    var levelHex = parseInt(row.level, 10).toString(16);
-                    cardLevel = parseInt(levelHex.slice(-2), 16);
-                    cardLScale = parseInt(levelHex.slice(-8, -6), 16);
-                    cardRScale = parseInt(levelHex.slice(-6, -4), 16);
-                    result.level = cardLevel
-                    result.cardLScale = cardLScale
-                    result.cardRScale = cardRScale
                 }
 
                 result.category = row.category
