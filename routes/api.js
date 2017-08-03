@@ -9,6 +9,7 @@ var utils = require('../utils/utils')
 var sqlite3 = require('sqlite3').verbose();
 var moment = require('moment')
 var _ = require('lodash')
+var async = require('async')
 
 var config = require('../db.config')
 var cardinfo = require('../cardinfo')
@@ -533,6 +534,147 @@ router.get('/cardinfo', function (req, res) {
             });
 
         });
+    });
+});
+
+router.get('/report', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+        if (err) {
+            return console.error('error fetching client from pool', err);
+        }
+
+        var from_date = moment().format('YYYY-MM-DD')
+        var to_date = moment().add(1,'day').format('YYYY-MM-DD')
+
+        if(req.query.from_date){
+            from_date = moment(req.query.from_date).format('YYYY-MM-DD')
+        }
+
+        if(req.query.to_date){
+            to_date = moment(req.query.to_date).format('YYYY-MM-DD')
+        }
+
+        async.parallel({
+            entertainTotal: function (callback) {
+                var sql = `SELECT count(*) from battle_history where type = 'entertain' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                console.log(sql)
+                client.query(sql, function (err, result) {
+                    done()
+                    if (err) {
+                        return console.error('error running query', err)
+                    }
+
+                    callback(err, result)
+                });
+            },
+
+            entertainDisconnect: function (callback) {
+                var sql = `SELECT count(*) from battle_history where type = 'entertain' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00' and (userscorea<0 or userscoreb<0);`
+                console.log(sql)
+                client.query(sql, function (err, result) {
+                    done()
+                    if (err) {
+                        return console.error('error running query', err)
+                    }
+
+                    callback(err, result)
+                });
+            },
+
+            entertainUsers: function (callback) {
+                var sql = `SELECT count(DISTINCT usernamea) from battle_history where type = 'entertain' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                console.log(sql)
+                client.query(sql, function (err, result) {
+                    done()
+                    if (err) {
+                        return console.error('error running query', err)
+                    }
+
+                    callback(err, result)
+                });
+            },
+
+            athleticTotal: function (callback) {
+                var sql = `SELECT count(*) from battle_history where type = 'athletic' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                console.log(sql)
+                client.query(sql, function (err, result) {
+                    done()
+                    if (err) {
+                        return console.error('error running query', err)
+                    }
+
+                    callback(err, result)
+                });
+            },
+
+            athleticDisconnect: function (callback) {
+                var sql = `SELECT count(*) from battle_history where type = 'athletic' and start_time>= '${from_date} 00:00:00' and (userscorea<0 or userscoreb<0) and start_time < '${to_date} 00:00:00';`
+                console.log(sql)
+                client.query(sql, function (err, result) {
+                    done()
+                    if (err) {
+                        return console.error('error running query', err)
+                    }
+
+                    callback(err, result)
+                });
+            },
+
+            athleticUsers: function (callback) {
+                var sql = `SELECT count(DISTINCT usernamea) from battle_history where type = 'athletic' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                console.log(sql)
+                client.query(sql, function (err, result) {
+                    done()
+                    if (err) {
+                        return console.error('error running query', err)
+                    }
+
+                    callback(err, result)
+                });
+            },
+
+            totalActive: function (callback) {
+                var sql = `SELECT count(DISTINCT usernamea) from battle_history where  start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                console.log(sql)
+                client.query(sql, function (err, result) {
+                    done()
+                    if (err) {
+                        return console.error('error running query', err)
+                    }
+
+                    callback(err, result)
+                });
+            }
+        }, function (err, results) {
+            if (err) {
+                console.error(err);
+            }
+
+            var entertainTotal = results.entertainTotal.rows[0].count;
+            var entertainDisconnect = results.entertainDisconnect.rows[0].count;
+            var entertainUsers = results.entertainUsers.rows[0].count;
+            var athleticTotal = results.athleticTotal.rows[0].count;
+            var athleticDisconnect = results.athleticDisconnect.rows[0].count;
+            var athleticUsers = results.athleticUsers.rows[0].count;
+            var totalActive = results.totalActive.rows[0].count;
+            
+            res.json({
+                entertain: {
+                    total: entertainTotal,
+                    disconnect: entertainDisconnect,
+                    users: entertainUsers
+                },
+                athletic: {
+                    total: athleticTotal,
+                    disconnect: athleticDisconnect,
+                    users: athleticUsers
+                },
+                totalActive: totalActive
+            });
+        });
+
     });
 });
 
