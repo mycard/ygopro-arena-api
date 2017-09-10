@@ -405,9 +405,9 @@ router.get('/users', function (req, res) {
         var o = req.query.o || 'pt';
         var sql;
         if (o === 'pt') {
-            sql = 'SELECT * from user_info order by pt desc limit 50'
+            sql = 'SELECT * from user_info order by pt desc limit 100'
         } else {
-            sql = 'SELECT * from user_info order by exp desc limit 50'
+            sql = 'SELECT * from user_info order by exp desc limit 100'
         }
 
         console.log(sql);
@@ -546,13 +546,13 @@ router.get('/report', function (req, res) {
         }
 
         var from_date = moment().format('YYYY-MM-DD')
-        var to_date = moment().add(1,'day').format('YYYY-MM-DD')
+        var to_date = moment().add(1, 'day').format('YYYY-MM-DD')
 
-        if(req.query.from_date){
+        if (req.query.from_date) {
             from_date = moment(req.query.from_date).format('YYYY-MM-DD')
         }
 
-        if(req.query.to_date){
+        if (req.query.to_date) {
             to_date = moment(req.query.to_date).format('YYYY-MM-DD')
         }
 
@@ -659,7 +659,7 @@ router.get('/report', function (req, res) {
             var athleticDisconnect = results.athleticDisconnect.rows[0].count;
             var athleticUsers = results.athleticUsers.rows[0].count;
             var totalActive = results.totalActive.rows[0].count;
-            
+
             res.json({
                 entertain: {
                     total: entertainTotal,
@@ -672,6 +672,125 @@ router.get('/report', function (req, res) {
                     users: athleticUsers
                 },
                 totalActive: totalActive
+            });
+        });
+
+    });
+});
+
+router.post('/votes', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+        let id = req.body.id;
+        let title = req.body.title;
+        let options = req.body.options;
+        let start_time = req.body.start_time;
+        let end_time = req.body.end_time;
+        let status = req.body.status || false;
+
+        console.log('idididi:',id)
+
+        var now = moment().format('YYYY-MM-DD HH:mm')
+
+
+        var sql = `insert into votes (title, options, create_time, start_time, end_time, status) values (
+                    '${title}',
+                    '${options}',
+                    '${now}',
+                    '${start_time}',
+                    '${end_time}',
+                    '${status}'
+                    )`;
+
+        if (id) {
+            sql = `update votes set 
+                    title = '${title}', 
+                    options = '${options}', 
+                    start_time = '${start_time}', 
+                    end_time = '${end_time}', 
+                    status = '${status}'
+                    where id = '${id}'`;
+        }
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+            done();
+
+            var response = {};
+            if (err) {
+                console.log(err)
+                response.code = 500;
+            } else {
+                response.code = 200;
+            }
+            res.json(response);
+        });
+    });
+});
+
+router.get('/votes', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+
+        var username = req.query.username;
+        var type = req.query.type;
+
+        var arena = null //1 athletic 2 entertain
+
+        if (type === '1') {
+            arena = 'athletic'
+        }
+        if (type === '2') {
+            arena = 'entertain'
+        }
+
+        var from_date = req.query.from_date;
+        var to_date = req.query.to_date;
+
+        // page_no 当前页数 page_num 每页展示数
+        // offset = (page_no - 1) * page_num 
+        // select * from battle_history limit  5 offset 15;
+        var page_no = req.query.page || 1
+        var page_num = req.query.page_num || 15
+        var offset = (page_no - 1) * page_num
+
+        var sql = `SELECT count(*) from votes `
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+
+            var total = result.rows[0].count
+
+            var sql2 = `SELECT * from votes order by create_time desc limit ${page_num} offset ${offset}`
+
+
+            console.log(sql2)
+
+            client.query(sql2, function (err, result) {
+                //call `done()` to release the client back to the pool
+                done()
+                if (err) {
+                    return console.error('error running query', err)
+                }
+                res.json({
+                    total: total - 0,
+                    data: result.rows
+                });
             });
         });
 
