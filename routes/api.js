@@ -694,7 +694,7 @@ router.post('/votes', function (req, res) {
         let end_time = req.body.end_time;
         let status = req.body.status || false;
 
-        console.log('idididi:',id)
+
 
         var now = moment().format('YYYY-MM-DD HH:mm')
 
@@ -732,6 +732,76 @@ router.post('/votes', function (req, res) {
             }
             res.json(response);
         });
+    });
+});
+
+
+router.post('/submitVote', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+
+        let user = req.body.user;
+        let username = req.body.username;
+        let voteid = req.body.voteid;
+        let opid = req.body.opid;
+
+        var date_time = moment().format('YYYY-MM-DD')
+        var create_time = moment().format('YYYY-MM-DD HH:mm')
+
+
+        var sql1 = `insert into vote_result (vote_id, option_id, userid, date_time, create_time) values (
+                    '${voteid}',
+                    '${opid}',
+                    '${user}',
+                    '${date_time}',
+                    '${create_time}'
+                    )`;
+
+
+        console.log(sql1);
+
+        var sql2 = `update user_info set 
+                    exp = (exp + 1),
+                    id = ${user}
+                    where username = '${username}'`;
+
+        console.log(sql2);
+
+        async.waterfall([
+            function (callback) {
+                client.query(sql1, function (err, result) {
+                    done()
+                    callback(err)
+                });
+            },
+
+            function (callback) {
+                client.query(sql2, function (err, result) {
+                    done()
+                    callback(err)
+                });
+            },
+
+        ], function (err) {
+            var response = {};
+            if (err) {
+                console.log(err)
+                response.code = 500;
+            } else {
+                response.code = 200;
+            }
+            res.json(response);
+
+        });
+
+
+       
     });
 });
 
@@ -778,7 +848,6 @@ router.get('/votes', function (req, res) {
 
             var sql2 = `SELECT * from votes order by create_time desc limit ${page_num} offset ${offset}`
 
-
             console.log(sql2)
 
             client.query(sql2, function (err, result) {
@@ -787,11 +856,124 @@ router.get('/votes', function (req, res) {
                 if (err) {
                     return console.error('error running query', err)
                 }
-                res.json({
-                    total: total - 0,
-                    data: result.rows
+
+                var optionCountMap = {}
+                var vates = result.rows;
+                async.each(vates, function (vote, callback) {
+
+                    var vateid = vote.id
+                    var options = JSON.parse(vote.options)
+
+                    async.each(options, function (option, callback2) {
+
+                        var queryVoteOptionCount = `SELECT count(*) from vote_result where vote_id='${vateid}' and option_id ='${option.key}'`
+                        console.log(queryVoteOptionCount)
+                        client.query(queryVoteOptionCount, function (err, result) {
+                            //call `done()` to release the client back to the pool
+                            done()
+                            if (err) {
+                                console.error('error running query', err)
+                            }
+                            optionCountMap[option.key] = result.rows[0].count
+                            callback2();
+                        });
+
+
+                    }, function (err) {
+                        if (err) {
+                            console.error("get votes error :", err);
+                        }
+
+                        callback()
+                    });
+
+
+                }, function (err) {
+
+                    if (err) {
+                        console.error("get votes error :", err);
+                    }
+
+                    res.json({
+                        total: total - 0,
+                        data: result.rows,
+                        optionCountMap: optionCountMap
+                    });
                 });
+
+
+
             });
+
+        });
+
+    });
+});
+
+
+router.get('/vote', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+
+        var user = req.query.user;
+
+        var now = moment().format('YYYY-MM-DD HH:mm:ss')
+
+        // 找出可用投票 1 状态为可用 2 开始时间早于当前时间 3 结束时间大于当前时间 
+        var sql1 = `SELECT * from votes where status='t' and start_time <= '${now}' and end_time >= '${now}' order by create_time desc `
+        console.log(sql1)
+        //找出此user投过的票的vote id， 利用这些vote 过滤已经投过的投票 
+        var sql2 = `SELECT vote_id from vote_result where userid = '${user}'`
+        //剩下的投票中随机选一个返回
+
+        async.waterfall([
+            function (callback) {
+
+                client.query(sql1, function (err, result) {
+                    done()
+                    callback(err, result.rows)
+                });
+            },
+
+            function (rows, callback) {
+
+                client.query(sql2, function (err, result) {
+                    done()
+                    var voteIds = _.map(result.rows, 'vote_id');
+                    callback(err, rows, voteIds)
+                });
+            },
+
+            function (rows, ids, callback) {
+                console.log(ids)
+                var validRow = rows.filter(function (row) {
+                    console.log(row, ids.indexOf(row.id.toString()))
+                    return ids.indexOf(row.id.toString()) === -1
+                })
+                callback(null, validRow);
+            }
+
+        ], function (err, validRow) {
+            if (err) {
+                console.error('error running query', err)
+            }
+
+            if (validRow.length > 0) {
+                res.json({
+                    data: validRow[0]
+                });
+            } else {
+                res.json({
+                    data: "null"
+                });
+            }
+
         });
 
     });
