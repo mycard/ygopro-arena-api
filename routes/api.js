@@ -951,9 +951,9 @@ router.get('/vote', function (req, res) {
             },
 
             function (rows, ids, callback) {
-                console.log(ids)
+                // console.log(ids)
                 var validRow = rows.filter(function (row) {
-                    console.log(row, ids.indexOf(row.id.toString()))
+                    // console.log(row, ids.indexOf(row.id.toString()))
                     return ids.indexOf(row.id.toString()) === -1
                 })
                 callback(null, validRow);
@@ -965,8 +965,9 @@ router.get('/vote', function (req, res) {
             }
 
             if (validRow.length > 0) {
+                var index = _.random(0,validRow.length)
                 res.json({
-                    data: validRow[0]
+                    data: validRow[index]
                 });
             } else {
                 res.json({
