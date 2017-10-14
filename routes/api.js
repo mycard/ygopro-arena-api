@@ -735,6 +735,41 @@ router.post('/votes', function (req, res) {
     });
 });
 
+router.post('/voteStatus', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+        let id = req.body.id;
+        let status = req.body.status;
+       
+        var now = moment().format('YYYY-MM-DD HH:mm')
+
+        var sql = `update votes set 
+                    status = '${status}'
+                    where id = '${id}'`;
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+            done();
+
+            var response = {};
+            if (err) {
+                console.log(err)
+                response.code = 500;
+            } else {
+                response.code = 200;
+            }
+            res.json(response);
+        });
+    });
+});
+
 
 router.post('/submitVote', function (req, res) {
     // to run a query we can acquire a client from the pool,
@@ -874,7 +909,7 @@ router.get('/votes', function (req, res) {
                     async.each(options, function (option, callback2) {
 
                         var queryVoteOptionCount = `SELECT count(*) from vote_result where vote_id='${vateid}' and option_id ='${option.key}'`
-                        console.log(queryVoteOptionCount)
+                        // console.log(queryVoteOptionCount)
                         client.query(queryVoteOptionCount, function (err, result) {
                             //call `done()` to release the client back to the pool
                             done()
