@@ -801,7 +801,7 @@ router.post('/submitVote', function (req, res) {
         });
 
 
-       
+
     });
 });
 
@@ -819,13 +819,13 @@ router.get('/votes', function (req, res) {
         var username = req.query.username;
         var type = req.query.type;
 
-        var arena = null //1 athletic 2 entertain
 
+        var status = undefined
         if (type === '1') {
-            arena = 'athletic'
+            status = true
         }
         if (type === '2') {
-            arena = 'entertain'
+            status = false
         }
 
         var from_date = req.query.from_date;
@@ -839,6 +839,9 @@ router.get('/votes', function (req, res) {
         var offset = (page_no - 1) * page_num
 
         var sql = `SELECT count(*) from votes `
+        if (status !== undefined) {
+            sql = `SELECT count(*) from votes where status=${status}`
+        }
 
         console.log(sql);
 
@@ -847,6 +850,10 @@ router.get('/votes', function (req, res) {
             var total = result.rows[0].count
 
             var sql2 = `SELECT * from votes order by create_time desc limit ${page_num} offset ${offset}`
+
+            if (status !== undefined) {
+                var sql2 = `SELECT * from votes where status=${status} order by create_time desc limit ${page_num} offset ${offset}`
+            }
 
             console.log(sql2)
 
@@ -965,7 +972,7 @@ router.get('/vote', function (req, res) {
             }
 
             if (validRow.length > 0) {
-                var index = _.random(0,validRow.length)
+                var index = _.random(0, validRow.length)
                 res.json({
                     data: validRow[index]
                 });
