@@ -693,19 +693,20 @@ router.post('/votes', function (req, res) {
         let start_time = req.body.start_time;
         let end_time = req.body.end_time;
         let status = req.body.status || false;
-
-
+        let multiple = req.body.multiple || false;
+        let max = req.body.max || 2;
 
         var now = moment().format('YYYY-MM-DD HH:mm')
 
-
-        var sql = `insert into votes (title, options, create_time, start_time, end_time, status) values (
+        var sql = `insert into votes (title, options, create_time, start_time, end_time, status, multiple, max) values (
                     '${title}',
                     '${options}',
                     '${now}',
                     '${start_time}',
                     '${end_time}',
-                    '${status}'
+                    '${status}',
+                    '${multiple}',
+                    '${max}'
                     )`;
 
         if (id) {
@@ -714,7 +715,9 @@ router.post('/votes', function (req, res) {
                     options = '${options}', 
                     start_time = '${start_time}', 
                     end_time = '${end_time}', 
-                    status = '${status}'
+                    status = '${status}',
+                    multiple = '${multiple}', 
+                    max = '${max}'
                     where id = '${id}'`;
         }
 
@@ -746,7 +749,7 @@ router.post('/voteStatus', function (req, res) {
         }
         let id = req.body.id;
         let status = req.body.status;
-       
+
         var now = moment().format('YYYY-MM-DD HH:mm')
 
         var sql = `update votes set 
@@ -786,20 +789,40 @@ router.post('/submitVote', function (req, res) {
         let voteid = req.body.voteid;
         let opid = req.body.opid;
 
+        let opids = req.body['opids[]'] 
+        let multiple = req.body.multiple ;
+
         var date_time = moment().format('YYYY-MM-DD')
         var create_time = moment().format('YYYY-MM-DD HH:mm')
 
+        var sql1 = ""
+        var voteResultSqls = [];
 
-        var sql1 = `insert into vote_result (vote_id, option_id, userid, date_time, create_time) values (
+        if (multiple === "true") {
+            _.each(opids, function (id) {
+                sql1 = `insert into vote_result (vote_id, option_id, userid, date_time, create_time) values (
+                    '${voteid}',
+                    '${id}',
+                    '${user}',
+                    '${date_time}',
+                    '${create_time}'
+                    )`;
+                voteResultSqls.push(sql1)
+            })
+
+        } else {
+            sql1 = `insert into vote_result (vote_id, option_id, userid, date_time, create_time) values (
                     '${voteid}',
                     '${opid}',
                     '${user}',
                     '${date_time}',
                     '${create_time}'
                     )`;
+            voteResultSqls.push(sql1)
+        }
 
 
-        console.log(sql1);
+        console.log(voteResultSqls);
 
         var sql2 = `update user_info set 
                     exp = (exp + 1),
@@ -810,9 +833,13 @@ router.post('/submitVote', function (req, res) {
 
         async.waterfall([
             function (callback) {
-                client.query(sql1, function (err, result) {
-                    done()
-                    callback(err)
+                async.each(voteResultSqls, function (sql, callback2) {
+                    client.query(sql, function (err, result) {
+                        done()
+                        callback2(err);
+                    });
+                }, function (err) {
+                    callback()
                 });
             },
 
