@@ -197,7 +197,7 @@ router.post('/score', function (req, res) {
                 // select count(*) from battle_history where (usernameA = '爱吉' OR usernameB = '爱吉') and start_time > date '2017-02-09'
                 // 日首胜  每日0点开始计算  日首胜的话是额外增加固定4DP
 
-                var today = moment().format('YYYY-MM-DD')
+                var today = moment(start).format('YYYY-MM-DD')
 
                 // 真实得分 S（胜=1分，和=0.5分，负=0分）
                 let sa = 0, sb = 0
@@ -220,8 +220,9 @@ router.post('/score', function (req, res) {
                     paramB['athletic_draw'] = 1
                 }
 
-                var queryFirsrWinSql = `select count(*) from battle_history where type ='athletic' and ( (usernameA = '${winner}' AND  userscorea > userscoreb ) OR (usernameB = '${winner}' AND userscoreb > userscorea) ) and start_time > date '${today}' `
-
+                var queryFirsrWinSql = `select count(*) from battle_history where type ='athletic' and ( (usernameA = '${winner}' AND  userscorea > userscoreb ) OR (usernameB = '${winner}' AND userscoreb > userscorea) ) and start_time > '${today}' `
+                console.log(queryFirsrWinSql)
+                
                 client.query(queryFirsrWinSql, function (err, result) {
                     done()
                     var total = 0;
@@ -239,22 +240,22 @@ router.post('/score', function (req, res) {
                     if (isLess3Min) {
                         if (winner === usernameA) {
                             ptResult.ptA = userA.pt
-                            console.log(usernameA, '当局有人存在早退，胜利不加分', moment().format('YYYY-MM-DD HH:mm'))
+                            console.log(usernameA, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
                         if (winner === usernameB) {
                             ptResult.ptB = userB.pt
-                            console.log(usernameB, '当局有人存在早退，胜利不加分', moment().format('YYYY-MM-DD HH:mm'))
+                            console.log(usernameB, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
                     }
 
                     if (firstWin) {
                         if (winner === usernameA) {
                             ptResult.ptA += 4
-                            console.log(usernameA, '首胜多加4DP', moment().format('YYYY-MM-DD HH:mm'))
+                            console.log(usernameA, '首胜多加4DP', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
                         if (winner === usernameB) {
                             ptResult.ptB += 4
-                            console.log(usernameB, '首胜多加4DP', moment().format('YYYY-MM-DD HH:mm'))
+                            console.log(usernameB, '首胜多加4DP', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
                     }
 
