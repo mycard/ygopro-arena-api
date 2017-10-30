@@ -222,7 +222,7 @@ router.post('/score', function (req, res) {
 
                 var queryFirsrWinSql = `select count(*) from battle_history where type ='athletic' and ( (usernameA = '${winner}' AND  userscorea > userscoreb ) OR (usernameB = '${winner}' AND userscoreb > userscorea) ) and start_time > '${today}' `
                 console.log(queryFirsrWinSql)
-                
+
                 client.query(queryFirsrWinSql, function (err, result) {
                     done()
                     var total = 0;
@@ -647,6 +647,33 @@ router.get('/report', function (req, res) {
 
                     callback(err, result)
                 });
+            },
+
+            //以小时为维度 计算每小时的战斗场数 竞技场
+            hourlyAthletic: function (callback) {
+                var sql = `SELECT start_time FROM battle_history WHERE type = 'athletic' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                console.log(sql)
+                client.query(sql, function (err, result) {
+                    done()
+                    if (err) {
+                        return console.error('error running query', err)
+                    }
+
+                    callback(err, result)
+                });
+            },
+            //以小时为维度 计算每小时的战斗场数 娱乐场
+            hourlyEntertain: function (callback) {
+                var sql = `SELECT start_time FROM battle_history WHERE type = 'entertain' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                console.log(sql)
+                client.query(sql, function (err, result) {
+                    done()
+                    if (err) {
+                        return console.error('error running query', err)
+                    }
+
+                    callback(err, result)
+                });
             }
         }, function (err, results) {
             if (err) {
@@ -661,6 +688,30 @@ router.get('/report', function (req, res) {
             var athleticUsers = results.athleticUsers.rows[0].count;
             var totalActive = results.totalActive.rows[0].count;
 
+            var dateHour = ""
+            var hourlyDataMap = {
+                athletic: {},
+                entertain: {}
+            }
+            var hourlyAthletic = results.hourlyAthletic.rows;
+            _.forEach(hourlyAthletic, function (row) {
+                dateHour = moment(row.start_time).format("YYYY-MM-DD HH")
+                if (hourlyDataMap['athletic'][dateHour]) {
+                    hourlyDataMap['athletic'][dateHour]++;
+                } else {
+                    hourlyDataMap['athletic'][dateHour] = 1;
+                }
+            })
+            var hourlyEntertain = results.hourlyEntertain.rows;
+            _.forEach(hourlyEntertain, function (row) {
+                dateHour = moment(row.start_time).format("YYYY-MM-DD HH")
+                if (hourlyDataMap['entertain'][dateHour]) {
+                    hourlyDataMap['entertain'][dateHour]++;
+                } else {
+                    hourlyDataMap['entertain'][dateHour] = 1;
+                }
+            })
+
             res.json({
                 entertain: {
                     total: entertainTotal,
@@ -672,7 +723,8 @@ router.get('/report', function (req, res) {
                     disconnect: athleticDisconnect,
                     users: athleticUsers
                 },
-                totalActive: totalActive
+                totalActive: totalActive,
+                hourlyDataMap: hourlyDataMap
             });
         });
 
@@ -790,8 +842,8 @@ router.post('/submitVote', function (req, res) {
         let voteid = req.body.voteid;
         let opid = req.body.opid;
 
-        let opids = req.body['opids[]'] 
-        let multiple = req.body.multiple ;
+        let opids = req.body['opids[]']
+        let multiple = req.body.multiple;
 
         var date_time = moment().format('YYYY-MM-DD')
         var create_time = moment().format('YYYY-MM-DD HH:mm')
