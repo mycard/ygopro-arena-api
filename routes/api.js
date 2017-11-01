@@ -689,28 +689,76 @@ router.get('/report', function (req, res) {
             var totalActive = results.totalActive.rows[0].count;
 
             var dateHour = ""
+            var h = ""
             var hourlyDataMap = {
                 athletic: {},
                 entertain: {}
             }
+            var hourlyAvgMapAthletic = {}
+            var hourlyAvgMapEntertain = {}
+            var totalAthletic = 0
+            var totalEntertain = 0
+
             var hourlyAthletic = results.hourlyAthletic.rows;
             _.forEach(hourlyAthletic, function (row) {
+                totalAthletic++
                 dateHour = moment(row.start_time).format("YYYY-MM-DD HH")
+                h = moment(row.start_time).format("H")
                 if (hourlyDataMap['athletic'][dateHour]) {
                     hourlyDataMap['athletic'][dateHour]++;
                 } else {
                     hourlyDataMap['athletic'][dateHour] = 1;
                 }
+
+                if (hourlyAvgMapAthletic[h]) {
+                    hourlyAvgMapAthletic[h]++;
+                } else {
+                    hourlyAvgMapAthletic[h] = 1;
+                }
             })
             var hourlyEntertain = results.hourlyEntertain.rows;
             _.forEach(hourlyEntertain, function (row) {
+                totalEntertain++
                 dateHour = moment(row.start_time).format("YYYY-MM-DD HH")
+                h = moment(row.start_time).format("H")
                 if (hourlyDataMap['entertain'][dateHour]) {
                     hourlyDataMap['entertain'][dateHour]++;
                 } else {
                     hourlyDataMap['entertain'][dateHour] = 1;
                 }
+
+                if (hourlyAvgMapEntertain[h]) {
+                    hourlyAvgMapEntertain[h]++;
+                } else {
+                    hourlyAvgMapEntertain[h] = 1;
+                }
             })
+
+            var totalDays = moment(to_date).diff(from_date, 'days')
+
+            //饼图
+            var legendDataAthletic = [];
+            var seriesDataAthletic = [];
+            for (var i = 0; i < 24; i++) {
+                legendDataAthletic.push(i);
+                seriesDataAthletic.push({
+                    name: i,
+                    avg: ((hourlyAvgMapAthletic[i] || 0) / totalDays).toFixed(2),
+                    value: hourlyAvgMapAthletic[i] || 0
+                });
+            }
+
+            var legendDataEntertain = [];
+            var seriesDataEntertain = [];
+            for (var i = 0; i < 24; i++) {
+                legendDataEntertain.push(i);
+                seriesDataEntertain.push({
+                    name: i,
+                    avg: ((hourlyAvgMapEntertain[i] || 0) / totalDays).toFixed(2),
+                    value: hourlyAvgMapEntertain[i] || 0
+                });
+            }
+
 
             res.json({
                 entertain: {
@@ -724,7 +772,14 @@ router.get('/report', function (req, res) {
                     users: athleticUsers
                 },
                 totalActive: totalActive,
-                hourlyDataMap: hourlyDataMap
+                hourlyDataMap: hourlyDataMap,
+                totalDays: totalDays,
+                totalEntertain: totalEntertain,
+                totalAthletic: totalAthletic,
+                legendDataAthletic: legendDataAthletic,
+                seriesDataAthletic: seriesDataAthletic,
+                legendDataEntertain: legendDataEntertain,
+                seriesDataEntertain: seriesDataEntertain
             });
         });
 
