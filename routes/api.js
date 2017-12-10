@@ -236,17 +236,17 @@ router.post('/score', function (req, res) {
                     let expResult = utils.getExpScore(userA.exp, userB.exp, userscoreA, userscoreB)
 
                     // 3分钟以内结束的决斗，胜者不加DP，负者照常扣DP。 平局不扣DP不加DP   : 把开始时间+3分钟，如果加完比结束时间靠后，说明比赛时间不足三分钟
-                    var isLess3Min = moment(start).add(3, 'm').isAfter(moment(end));
-                    if (isLess3Min) {
-                        if (winner === usernameA) {
-                            ptResult.ptA = userA.pt
-                            console.log(usernameA, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
-                        }
-                        if (winner === usernameB) {
-                            ptResult.ptB = userB.pt
-                            console.log(usernameB, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
-                        }
-                    }
+                    // var isLess3Min = moment(start).add(3, 'm').isAfter(moment(end));
+                    // if (isLess3Min) {
+                    //     if (winner === usernameA) {
+                    //         ptResult.ptA = userA.pt
+                    //         console.log(usernameA, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
+                    //     }
+                    //     if (winner === usernameB) {
+                    //         ptResult.ptB = userB.pt
+                    //         console.log(usernameB, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
+                    //     }
+                    // }
 
                     if (firstWin) {
                         if (winner === usernameA) {
@@ -894,6 +894,14 @@ router.post('/submitVote', function (req, res) {
 
         let user = req.body.user;
         let username = req.body.username;
+
+        if (!user || !username || user == "undefined" || username == "undefined") {
+            var response = {};
+            response.code = 500;
+            res.json(response);
+            return
+        }
+
         let voteid = req.body.voteid;
         let opid = req.body.opid;
 
@@ -937,7 +945,6 @@ router.post('/submitVote', function (req, res) {
                     id = ${user}
                     where username = '${username}'`;
 
-        console.log(sql2);
 
         async.waterfall([
             function (callback) {
@@ -947,11 +954,12 @@ router.post('/submitVote', function (req, res) {
                         callback2(err);
                     });
                 }, function (err) {
-                    callback()
+                    callback(err)
                 });
             },
 
             function (callback) {
+                console.log(sql2);
                 client.query(sql2, function (err, result) {
                     done()
                     callback(err)
@@ -969,7 +977,6 @@ router.post('/submitVote', function (req, res) {
             res.json(response);
 
         });
-
 
 
     });
@@ -1035,34 +1042,73 @@ router.get('/votes', function (req, res) {
                 }
 
                 var optionCountMap = {}
+                var voteCountMap = {}
                 var vates = result.rows;
                 async.each(vates, function (vote, callback) {
 
                     var vateid = vote.id
                     var options = JSON.parse(vote.options)
 
-                    async.each(options, function (option, callback2) {
-
-                        var queryVoteOptionCount = `SELECT count(*) from vote_result where vote_id='${vateid}' and option_id ='${option.key}'`
-                        // console.log(queryVoteOptionCount)
-                        client.query(queryVoteOptionCount, function (err, result) {
-                            //call `done()` to release the client back to the pool
-                            done()
-                            if (err) {
-                                console.error('error running query', err)
-                            }
-                            optionCountMap[option.key] = result.rows[0].count
-                            callback2();
-                        });
+                    var option_ids = []
 
 
-                    }, function (err) {
-                        if (err) {
-                            console.error("get votes error :", err);
+                    async.waterfall([
+                        function (callback3) {
+
+                            async.each(options, function (option, callback2) {
+
+                                var queryVoteOptionCount = `SELECT count(*) from vote_result where vote_id='${vateid}' and option_id ='${option.key}' `
+
+                                option_ids.push(String(option.key))
+                                // console.log(queryVoteOptionCount)
+                                client.query(queryVoteOptionCount, function (err, result) {
+                                    //call `done()` to release the client back to the pool
+                                    done()
+                                    if (err) {
+                                        console.error('error running query', err)
+                                    }
+                                    optionCountMap[option.key] = result.rows[0].count
+                                    callback2();
+                                });
+
+
+                            }, function (err) {
+                                if (err) {
+                                    console.error("get votes error :", err);
+                                }
+
+                                callback3()
+                            });
+                        },
+
+                        function (callback3) {
+                            var id_str = "("
+                            _.each(option_ids, function (id) {
+                                id_str = id_str + "'"+ id + "'" + ","
+                            })
+                            id_str = id_str.slice(0, -1)
+                            id_str = id_str + ")"
+                            var queryVoteCount = `SELECT count(DISTINCT userid) from vote_result where vote_id = '${vateid}' and option_id in ${id_str} `
+                            console.log(queryVoteCount)
+                            client.query(queryVoteCount, function (err, result) {
+                                //call `done()` to release the client back to the pool
+                                done()
+                                if (err) {
+                                    console.error('error running query', err)
+                                }
+                                voteCountMap[vateid] = result.rows[0].count
+                                callback3();
+                            });
+
                         }
 
+                    ], function (err) {
                         callback()
+
                     });
+
+
+
 
 
                 }, function (err) {
@@ -1074,6 +1120,7 @@ router.get('/votes', function (req, res) {
                     res.json({
                         total: total - 0,
                         data: result.rows,
+                        voteCountMap: voteCountMap,
                         optionCountMap: optionCountMap
                     });
                 });
