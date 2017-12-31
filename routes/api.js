@@ -1807,7 +1807,7 @@ router.get('/getAd', function (req, res) {
                 var total = rows[0].count - 0
                 //返回随机的一个 
                 // SELECT myid FROM mytable OFFSET floor(random()*N) LIMIT 1;
-                var sql2 = `SELECT * from ads OFFSET floor(random() * ${total}) LIMIT 1 `
+                var sql2 = `SELECT * from ads where status='t' OFFSET floor(random() * ${total}) LIMIT 1 `
                 console.log(sql2)
                 client.query(sql2, function (err, result) {
                     done()
