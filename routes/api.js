@@ -18,6 +18,8 @@ var attrOffset = 1010
 var raceOffset = 1020
 var typeOffset = 1050
 
+var cache = {}
+
 var constants = {
     "TYPES": {
         "TYPE_MONSTER": 1,
@@ -101,8 +103,8 @@ var j = schedule.scheduleJob('30 30 0 1 * *', function () {
             return console.error('error fetching client from pool', err);
         }
 
-        var sql = `update user_info set pt = (pt - (pt - 500) * 0.4 )
-                    where pt > 500`
+        var sql = `update user_info set pt = (pt - (pt - 1000) * 0.4 )
+                    where pt > 1000`
 
         client.query(sql, function (err, result) {
             done()
@@ -236,17 +238,47 @@ router.post('/score', function (req, res) {
                     let expResult = utils.getExpScore(userA.exp, userB.exp, userscoreA, userscoreB)
 
                     // 3分钟以内结束的决斗，胜者不加DP，负者照常扣DP。 平局不扣DP不加DP   : 把开始时间+3分钟，如果加完比结束时间靠后，说明比赛时间不足三分钟
-                    // var isLess3Min = moment(start).add(3, 'm').isAfter(moment(end));
-                    // if (isLess3Min) {
-                    //     if (winner === usernameA) {
-                    //         ptResult.ptA = userA.pt
-                    //         console.log(usernameA, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
-                    //     }
-                    //     if (winner === usernameB) {
-                    //         ptResult.ptB = userB.pt
-                    //         console.log(usernameB, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
-                    //     }
-                    // }
+                    var isLess3Min = moment(start).add(1, 'm').isAfter(moment(end));
+                    if (isLess3Min) {
+                        if (winner === usernameA) {
+                            ptResult.ptA = userA.pt
+                            console.log(usernameA, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
+                        }
+                        if (winner === usernameB) {
+                            ptResult.ptB = userB.pt
+                            console.log(usernameB, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
+                        }
+                    }
+
+                    //新增记分规则，双方DP差距超过137的话，
+                    //按加减10或22处理：高分赢低分 高分加10低分减10，低分赢高分，低分加22，高分减22.
+                    if (userA.pt - userB.pt > 137) {
+                        if (winner === usernameA) {
+                            ptResult.ptA = userA.pt + 10
+                            ptResult.ptB = userB.pt - 10
+                            console.log(userA.pt, userB.pt, '当局分差过大,高分赢低分', moment(start).format('YYYY-MM-DD HH:mm'))
+                        }
+
+                        if (winner === usernameB) {
+                            ptResult.ptA = userA.pt - 22
+                            ptResult.ptB = userB.pt + 22
+                            console.log(userA.pt, userB.pt, '当局分差过大,低分赢高分', moment(start).format('YYYY-MM-DD HH:mm'))
+                        }
+                    }
+
+                    if (userB.pt - userA.pt > 137) {
+                        if (winner === usernameA) {
+                            ptResult.ptA = userA.pt + 22
+                            ptResult.ptB = userB.pt - 22
+                            console.log(userA.pt, userB.pt, '当局分差过大,低分赢高分', moment(start).format('YYYY-MM-DD HH:mm'))
+                        }
+
+                        if (winner === usernameB) {
+                            ptResult.ptA = userA.pt - 10
+                            ptResult.ptB = userB.pt + 10
+                            console.log(userA.pt, userB.pt, '当局分差过大,高分赢低分', moment(start).format('YYYY-MM-DD HH:mm'))
+                        }
+                    }
 
                     if (firstWin) {
                         if (winner === usernameA) {
@@ -1084,7 +1116,7 @@ router.get('/votes', function (req, res) {
                         function (callback3) {
                             var id_str = "("
                             _.each(option_ids, function (id) {
-                                id_str = id_str + "'"+ id + "'" + ","
+                                id_str = id_str + "'" + id + "'" + ","
                             })
                             id_str = id_str.slice(0, -1)
                             id_str = id_str + ")"
@@ -1566,6 +1598,327 @@ router.get('/user', function (req, res) {
     })
 
 })
+
+//ads 
+router.post('/ads', function (req, res) {
+
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+        let id = req.body.id;
+        let name = req.body.name;
+        let desc = req.body.desc;
+        let imgp = req.body.imgp;
+        let imgm = req.body.imgm;
+        let clkref = req.body.clkref;
+        let implurl = req.body.implurl;
+        let clkurl = req.body.clkurl;
+        let status = req.body.status || true;
+
+        var now = moment().format('YYYY-MM-DD HH:mm')
+
+        var sql = `insert into ads (name, desctext, imgp_url, imgm_url, click_ref, click_url, impl_url, status, update_time, create_time) values (
+                    '${name}',
+                    '${desc}',
+                    '${imgp}',
+                    '${imgm}',
+                    '${clkref}',
+                    '${clkurl}',
+                    '${implurl}',
+                    '${status}',
+                    '${now}',
+                    '${now}'
+                    )`;
+
+        if (id) {
+            sql = `update ads set 
+                    name = '${name}', 
+                    desctext = '${desc}', 
+                    imgp_url = '${imgp}', 
+                    imgm_url = '${imgm}', 
+                    click_ref = '${clkref}',
+                    click_url = '${clkurl}',
+                    impl_url = '${implurl}',
+                    status = '${status}',
+                    update_time = '${now}'
+                    where id = '${id}'`;
+        }
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+            done();
+
+            var response = {};
+            if (err) {
+                console.log(err)
+                response.code = 500;
+            } else {
+                response.code = 200;
+            }
+            res.json(response);
+        });
+    });
+});
+
+router.get('/ads', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+
+        var username = req.query.username;
+        var type = req.query.type;
+
+
+        var status = undefined
+        if (type === '1') {
+            status = true
+        }
+        if (type === '2') {
+            status = false
+        }
+
+        var from_date = req.query.from_date;
+        var to_date = req.query.to_date;
+
+        // page_no 当前页数 page_num 每页展示数
+        // offset = (page_no - 1) * page_num 
+        // select * from battle_history limit  5 offset 15;
+        var page_no = req.query.page || 1
+        var page_num = req.query.page_num || 15
+        var offset = (page_no - 1) * page_num
+
+        var sql = `SELECT count(*) from ads `
+        if (status !== undefined) {
+            sql = `SELECT count(*) from ads where status=${status}`
+        }
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+
+            var total = result.rows[0].count
+
+            var sql2 = `SELECT * from ads order by create_time desc limit ${page_num} offset ${offset}`
+
+            if (status !== undefined) {
+                var sql2 = `SELECT * from ads where status=${status} order by create_time desc limit ${page_num} offset ${offset}`
+            }
+
+            console.log(sql2)
+
+            client.query(sql2, function (err, result) {
+                //call `done()` to release the client back to the pool
+                done()
+                if (err) {
+                    return console.error('error running query', err)
+                }
+
+                var ads = result.rows;
+
+                res.json({
+                    total: total - 0,
+                    data: ads
+                });
+
+            });
+
+        });
+
+    });
+});
+
+
+router.post('/adsStatus', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+        let id = req.body.id;
+        let status = req.body.status;
+
+        var now = moment().format('YYYY-MM-DD HH:mm')
+
+        var sql = `update ads set 
+                    status = '${status}'
+                    where id = '${id}'`;
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+            done();
+
+            var response = {};
+            if (err) {
+                console.log(err)
+                response.code = 500;
+            } else {
+                response.code = 200;
+            }
+            res.json(response);
+        });
+    });
+});
+
+
+router.get('/getAd', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+
+        var user = req.query.user;
+
+        var now = moment().format('YYYY-MM-DD HH:mm:ss')
+
+        // 可用总数 
+        var sql1 = `SELECT count(*) from ads where status='t' `
+        console.log(sql1)
+
+        async.waterfall([
+            function (callback) {
+
+                client.query(sql1, function (err, result) {
+                    done()
+                    callback(err, result.rows)
+                });
+            },
+
+            function (rows, callback) {
+                var total = rows[0].count - 0
+                //返回随机的一个 
+                // SELECT myid FROM mytable OFFSET floor(random()*N) LIMIT 1;
+                var sql2 = `SELECT * from ads OFFSET floor(random() * ${total}) LIMIT 1 `
+                console.log(sql2)
+                client.query(sql2, function (err, result) {
+                    done()
+                    callback(err, result.rows)
+                });
+            },
+
+            function (validRow, callback) {
+                callback(null, validRow);
+            }
+
+        ], function (err, validRow) {
+            if (err) {
+                console.error('error running query', err)
+            }
+
+            if (validRow.length > 0) {
+                res.json({
+                    data: validRow[0]
+                });
+            } else {
+                res.json({
+                    data: "null"
+                });
+            }
+
+        });
+
+    });
+});
+
+
+router.post('/adClick', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+
+        let id = req.body.id;
+
+        var response = {};
+        if(!id){
+            response.code = 500;
+            res.json(response);
+            return
+        }
+        
+        var sql = `update ads set 
+                    clk = clk + 1
+                    where id = '${id}'`;
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+            done();
+
+            if (err) {
+                console.log(err)
+                response.code = 500;
+            } else {
+                response.code = 200;
+            }
+            res.json(response);
+        });
+    });
+});
+
+
+router.post('/adImpl', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+        let id = req.body.id;
+
+        var response = {};
+        if(!id){
+            response.code = 500;
+            res.json(response);
+            return
+        }
+
+        var sql = `update ads set 
+                    impl = impl + 1
+                    where id = '${id}'`;
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+            done();
+
+            if (err) {
+                console.log(err)
+                response.code = 500;
+            } else {
+                response.code = 200;
+            }
+            res.json(response);
+        });
+    });
+});
+
+
 
 createUser = function (username, ep, epEventName) {
     pool.connect(function (err, client, done) {
