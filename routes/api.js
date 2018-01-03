@@ -1517,7 +1517,7 @@ router.get('/user', function (req, res) {
 
         var resultData = {
             exp: 0,
-            pt: 500,
+            pt: 1000,
             entertain_win: 0,
             entertain_lose: 0,
             entertain_draw: 0,
@@ -1930,7 +1930,7 @@ createUser = function (username, ep, epEventName) {
             ep.emit(epEventName, {
                 username: username,
                 exp: 0,
-                pt: 500,
+                pt: 1000,
                 entertain_win: 0,
                 entertain_lose: 0,
                 entertain_draw: 0,
