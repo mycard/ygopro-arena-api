@@ -1368,6 +1368,8 @@ router.post('/deckinfo', function (req, res) {
     }
 
     var contentStr = JSON.stringify(content);
+    contentStr = contentStr.replace(/'/g, "''")
+
 
     if (!name) {
         return res.status(404).send('deck name is required!')
@@ -1411,6 +1413,7 @@ router.post('/deckinfo', function (req, res) {
                 done();
 
                 var response = {};
+                console.log(err)
                 if (err) {
                     response.code = 500;
                 } else {
@@ -1853,12 +1856,12 @@ router.post('/adClick', function (req, res) {
         let id = req.body.id;
 
         var response = {};
-        if(!id){
+        if (!id) {
             response.code = 500;
             res.json(response);
             return
         }
-        
+
         var sql = `update ads set 
                     clk = clk + 1
                     where id = '${id}'`;
@@ -1892,7 +1895,7 @@ router.post('/adImpl', function (req, res) {
         let id = req.body.id;
 
         var response = {};
-        if(!id){
+        if (!id) {
             response.code = 500;
             res.json(response);
             return
