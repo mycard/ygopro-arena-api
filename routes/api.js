@@ -937,7 +937,7 @@ router.post('/submitVote', function (req, res) {
         let voteid = req.body.voteid;
         let opid = req.body.opid;
 
-        let opids = req.body['opids[]']
+        let opids = req.body.opids
         let multiple = req.body.multiple;
 
         var date_time = moment().format('YYYY-MM-DD')
