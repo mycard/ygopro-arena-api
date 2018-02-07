@@ -2070,8 +2070,11 @@ router.get('/firstwin', function (req, res) {
                 });
             },
 
+
             function (activity, callback) {
-                var sql2 = `select count(*) from battle_history where type ='athletic' and isfirstwin='t' and ( usernameA = '${username}'  OR usernameB = '${username}' )  and start_time > '${activity.start}'  and start_time < '${activity.end}'`
+
+                var sql2 = `select count(*) from battle_history where type ='athletic' and isfirstwin='t' and ( (usernameA = '${username}' AND  userscorea > userscoreb ) OR (usernameB = '${username}' AND userscoreb > userscorea) ) and start_time > '${activity.start}'  and start_time < '${activity.end}' `
+
                 console.log(sql2)
                 client.query(sql2, function (err, result) {
                     done()
@@ -2083,7 +2086,7 @@ router.get('/firstwin', function (req, res) {
             function (activity, callback) {
                 var today = moment().format('YYYY-MM-DD')
 
-                var sql2 = `select count(*) from battle_history where type ='athletic' and isfirstwin='t' and ( usernameA = '${username}'  OR usernameB = '${username}' )  and start_time > '${today}' `
+                var sql2 = `select count(*) from battle_history where type ='athletic' and isfirstwin='t' and ( (usernameA = '${username}' AND  userscorea > userscoreb ) OR (usernameB = '${username}' AND userscoreb > userscorea) )  and start_time > '${today}' `
                 console.log(sql2)
                 client.query(sql2, function (err, result) {
                     done()
