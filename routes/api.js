@@ -1702,43 +1702,155 @@ router.get('/ads', function (req, res) {
         var page_num = req.query.page_num || 15
         var offset = (page_no - 1) * page_num
 
-        var sql = `SELECT count(*) from ads `
-        if (status !== undefined) {
-            sql = `SELECT count(*) from ads where status=${status}`
-        }
-
-        console.log(sql);
-
-        client.query(sql, function (err, result) {
-
-            var total = result.rows[0].count
-
-            var sql2 = `SELECT * from ads order by create_time desc limit ${page_num} offset ${offset}`
-
-            if (status !== undefined) {
-                var sql2 = `SELECT * from ads where status=${status} order by create_time desc limit ${page_num} offset ${offset}`
-            }
-
-            console.log(sql2)
-
-            client.query(sql2, function (err, result) {
-                //call `done()` to release the client back to the pool
-                done()
-                if (err) {
-                    return console.error('error running query', err)
+        async.waterfall([
+            function (callback) {
+                var sql = `SELECT count(*) from ads `
+                if (status !== undefined) {
+                    sql = `SELECT count(*) from ads where status=${status}`
                 }
 
-                var ads = result.rows;
+                console.log(sql);
 
-                res.json({
-                    total: total - 0,
-                    data: ads
+                client.query(sql, function (err, result) {
+                    //call `done()` to release the client back to the pool
+                    done()
+                    var total = result.rows[0].count
+                    callback(err, total)
+
                 });
 
+            },
+
+            function (total, callback) {
+
+                var sql2 = `SELECT * from ads order by create_time desc limit ${page_num} offset ${offset}`
+
+                if (status !== undefined) {
+                    var sql2 = `SELECT * from ads where status=${status} order by create_time desc limit ${page_num} offset ${offset}`
+                }
+
+                console.log(sql2)
+
+                client.query(sql2, function (err, result) {
+                    //call `done()` to release the client back to the pool
+                    done()
+                    if (err) {
+                        return console.error('error running query', err)
+                    }
+
+                    var ads = result.rows;
+
+                    callback(err, total, ads)
+
+
+                });
+            },
+
+            function (total, ads, callback) {
+
+                var sql3 = `SELECT config_value from site_config where config_key = 'auto_close_ad'`
+                client.query(sql3, function (err, result) {
+                    //call `done()` to release the client back to the pool
+                    done()
+
+                    var ad_switch = result.rows[0].config_value
+
+                    callback(err, total, ads, ad_switch)
+
+                });
+            },
+
+
+        ], function (err, total, ads, ad_switch) {
+
+            res.json({
+                ad_switch: ad_switch === 'true',
+                total: total - 0,
+                data: ads
             });
 
         });
 
+    });
+});
+
+
+router.post('/adSwitchChange', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+
+        let status = req.body.status;
+
+        var sql = `update site_config set 
+                    config_value = '${status}'
+                    where config_key = 'auto_close_ad'`;
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+            done();
+
+            var response = {};
+            if (err) {
+                console.log(err)
+                response.code = 500;
+            } else {
+                response.code = 200;
+            }
+            res.json(response);
+        });
+    });
+});
+
+
+router.post('/activity', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+
+        let start = req.body.start;
+        let end = req.body.end;
+        let max = req.body.max;
+        let name = req.body.name;
+
+        var activity = {
+            start: start,
+            end: end,
+            max: max,
+            name: name,
+        }
+
+        var activityStr = JSON.stringify(activity)
+
+        var sql = `update site_config set 
+                    config_value = '${activityStr}'
+                    where config_key = 'activity'`;
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+            done();
+
+            var response = {};
+            if (err) {
+                console.log(err)
+                response.code = 500;
+            } else {
+                response.code = 200;
+            }
+            res.json(response);
+        });
     });
 });
 
@@ -1799,14 +1911,29 @@ router.get('/getAd', function (req, res) {
 
         async.waterfall([
             function (callback) {
+                // if (cache.auto_close_ad) {
+                // callback(null, cache.auto_close_ad);
+                // } else {
+                var sql = "select config_value from site_config where config_key = 'auto_close_ad'"
+                console.log(sql)
+                client.query(sql, function (err, result) {
+                    done()
+                    cache.auto_close_ad = result.rows[0].config_value
+                    callback(err, result.rows[0].config_value);
+                });
+                // }
+
+            },
+
+            function (auto_close_ad, callback) {
 
                 client.query(sql1, function (err, result) {
                     done()
-                    callback(err, result.rows)
+                    callback(err, auto_close_ad, result.rows)
                 });
             },
 
-            function (rows, callback) {
+            function (auto_close_ad, rows, callback) {
                 var total = rows[0].count - 0
                 //返回随机的一个 
                 // SELECT myid FROM mytable OFFSET floor(random()*N) LIMIT 1;
@@ -1814,26 +1941,25 @@ router.get('/getAd', function (req, res) {
                 console.log(sql2)
                 client.query(sql2, function (err, result) {
                     done()
-                    callback(err, result.rows)
+                    callback(err, auto_close_ad, result.rows)
                 });
             },
 
-            function (validRow, callback) {
-                callback(null, validRow);
-            }
 
-        ], function (err, validRow) {
+        ], function (err, auto_close_ad, validRow) {
             if (err) {
                 console.error('error running query', err)
             }
 
             if (validRow.length > 0) {
                 res.json({
-                    data: validRow[0]
+                    data: validRow[0],
+                    auto_close_ad: auto_close_ad
                 });
             } else {
                 res.json({
-                    data: "null"
+                    data: "null",
+                    auto_close_ad: auto_close_ad
                 });
             }
 
@@ -1920,6 +2046,60 @@ router.post('/adImpl', function (req, res) {
         });
     });
 });
+
+
+
+router.get('/firstwin', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+        if (err) {
+            return console.error('error fetching client from pool', err);
+        }
+
+        var username = req.query.username;
+
+        async.waterfall([
+            function (callback) {
+                var sql = "select config_value from site_config where config_key = 'activity'"
+                console.log(sql)
+                client.query(sql, function (err, result) {
+                    done()
+                    cache.activity = JSON.parse(result.rows[0].config_value)
+                    callback(err, cache.activity);
+                });
+            },
+
+            function (activity, callback) {
+                var sql2 = `select count(*) from battle_history where type ='athletic' and isfirstwin='t' and ( usernameA = '${username}'  OR usernameB = '${username}' )  and start_time > '${activity.start}'  and start_time < '${activity.end}'`
+                console.log(sql2)
+                client.query(sql2, function (err, result) {
+                    done()
+                    activity.total = result.rows[0].count
+                    callback(err, activity);
+                });
+            },
+
+            function (activity, callback) {
+                var today = moment().format('YYYY-MM-DD')
+
+                var sql2 = `select count(*) from battle_history where type ='athletic' and isfirstwin='t' and ( usernameA = '${username}'  OR usernameB = '${username}' )  and start_time > '${today}' `
+                console.log(sql2)
+                client.query(sql2, function (err, result) {
+                    done()
+                    activity.today = result.rows[0].count
+                    callback(err, activity);
+                });
+            },
+
+        ], function (err, activity) {
+            res.json(activity);
+        });
+
+    });
+});
+
+
 
 
 
