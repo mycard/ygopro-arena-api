@@ -10,6 +10,7 @@ var sqlite3 = require('sqlite3').verbose();
 var moment = require('moment')
 var _ = require('lodash')
 var async = require('async')
+var fs = require('fs');
 
 var config = require('../db.config')
 var cardinfo = require('../cardinfo')
@@ -1302,6 +1303,194 @@ var file = require("./file.js");
 router.post('/upload', file.upload);
 router.get('/download/:id', file.download);
 
+router.get('/deckdata/:id', function (req, res) {
+    var filename = req.params.id
+    var filepath = 'upload/' + filename
+
+    var contents = fs.readFileSync(filepath, 'utf8');
+
+    contents = contents.split(/\r?\n/)
+
+    var main = []
+    var extra = []
+    var side = []
+
+    var current;
+
+    _.each(contents, function (text) {
+        if (text === "#main") {
+            current = main
+        }
+        if (text === "#extra") {
+            current = extra
+        }
+        if (text === "!side") {
+            current = side
+        }
+
+        if (text === "#main" || text === "#extra" || text === "!side") {
+            return
+        }
+
+        if (text.indexOf("created") !== -1) {
+            return
+        }
+
+        if (text.trim() === "") {
+            return
+        }
+
+        current.push(text)
+    })
+
+    main = _.countBy(main, Math.floor);
+    extra = _.countBy(extra, Math.floor);
+    side = _.countBy(side, Math.floor);
+
+    var mainCardArr = []
+    var extraCardArr = []
+    var sideCardArr = []
+
+    var masterCardArr = []
+    var trapCardArr = []
+    var spellCardArr = []
+
+    _.each(main, function (value, key) {
+        mainCardArr.push({ id: key, num: value })
+    })
+
+    _.each(extra, function (value, key) {
+        extraCardArr.push({ id: key, num: value })
+    })
+
+    _.each(side, function (value, key) {
+        sideCardArr.push({ id: key, num: value })
+    })
+
+
+    var db = dbCn;
+    var lang = "cn"
+    async.waterfall([
+
+        function (callback) {
+
+            async.each(mainCardArr, function (item, callback2) {
+
+                db.serialize(function () {
+
+                    db.get(`SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = ${item.id}`, function (err, row) {
+
+                        if (err) {
+                            console.error(err)
+                            return callback2();
+                        }
+
+                        if (!row) {
+                            console.error("card not found in database")
+                            item.name = "Not found in database"
+                            item.type = "怪兽"
+                            return callback2();
+                        }
+
+                        item.name = row.name
+                        item.type = getStringValueByMysticalNumber(lang, typeOffset, row.type)
+
+                        if (item.type === "怪兽") {
+                            masterCardArr.push(item)
+                        } else if (item.type === "魔法") {
+                            trapCardArr.push(item)
+                        } else if (item.type === "陷阱") {
+                            spellCardArr.push(item)
+                        } else {
+                            masterCardArr.push(item)
+                        }
+
+                        callback2()
+                    });
+                });
+
+            }, function (err) {
+                callback(err)
+            });
+
+        },
+
+        function (callback) {
+
+            async.each(extraCardArr, function (item, callback2) {
+                db.serialize(function () {
+
+                    db.get(`SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = ${item.id}`, function (err, row) {
+
+                        if (err) {
+                            console.error(err)
+                            return callback2();
+                        }
+
+                        if (!row) {
+                            console.error("card not found in database")
+                            item.name = "Not found in database"
+                            item.type = "怪兽"
+                            return callback2();
+                        }
+
+                        item.name = row.name
+                        item.type = getStringValueByMysticalNumber(lang, typeOffset, row.type)
+
+                        callback2()
+                    });
+                });
+            }, function (err) {
+                callback(err)
+            });
+        },
+
+        function (callback) {
+            async.each(sideCardArr, function (item, callback2) {
+                db.serialize(function () {
+
+                    db.get(`SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = ${item.id}`, function (err, row) {
+
+                        if (err) {
+                            console.error(err)
+                            return callback2();
+                        }
+
+                        if (!row) {
+                            console.error("card not found in database")
+                            item.name = "Not found in database"
+                            item.type = "怪兽"
+                            return callback2();
+                        }
+
+                        item.name = row.name
+                        item.type = getStringValueByMysticalNumber(lang, typeOffset, row.type)
+
+                        callback2()
+                    });
+                });
+            }, function (err) {
+                callback(err)
+            });
+        }
+
+    ], function (err) {
+
+        res.json({
+            deck: {
+                monster: masterCardArr,
+                spells: spellCardArr,
+                traps: trapCardArr,
+                extra: extraCardArr,
+                side: sideCardArr
+            }
+        });
+
+    });
+
+
+
+})
 
 //卡组范例提交
 
