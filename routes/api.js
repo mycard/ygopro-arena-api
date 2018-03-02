@@ -1398,9 +1398,9 @@ router.get('/deckdata/:id', function (req, res) {
                         if (item.type === "怪兽") {
                             masterCardArr.push(item)
                         } else if (item.type === "魔法") {
-                            trapCardArr.push(item)
-                        } else if (item.type === "陷阱") {
                             spellCardArr.push(item)
+                        } else if (item.type === "陷阱") {
+                            trapCardArr.push(item)
                         } else {
                             masterCardArr.push(item)
                         }
@@ -2261,7 +2261,10 @@ router.get('/firstwin', function (req, res) {
 
 
             function (activity, callback) {
-
+                // var end = activity.end;
+                // console.log(end);
+                var xx = moment(end).add(1, 'day').format('YYYY-MM-DD HH:mm')
+                // console.log(xx);
                 var sql2 = `select count(*) from battle_history where type ='athletic' and isfirstwin='t' and ( (usernameA = '${username}' AND  userscorea > userscoreb ) OR (usernameB = '${username}' AND userscoreb > userscorea) ) and start_time > '${activity.start}'  and start_time < '${activity.end}' `
 
                 console.log(sql2)
