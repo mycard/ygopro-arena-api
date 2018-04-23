@@ -238,18 +238,7 @@ router.post('/score', function (req, res) {
                     let ptResult = utils.getEloScore(userA.pt, userB.pt, sa, sb)
                     let expResult = utils.getExpScore(userA.exp, userB.exp, userscoreA, userscoreB)
 
-                    // 3分钟以内结束的决斗，胜者不加DP，负者照常扣DP。 平局不扣DP不加DP   : 把开始时间+3分钟，如果加完比结束时间靠后，说明比赛时间不足三分钟
-                    var isLess3Min = moment(start).add(1, 'm').isAfter(moment(end));
-                    if (isLess3Min) {
-                        if (winner === usernameA) {
-                            ptResult.ptA = userA.pt
-                            console.log(usernameA, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
-                        }
-                        if (winner === usernameB) {
-                            ptResult.ptB = userB.pt
-                            console.log(usernameB, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
-                        }
-                    }
+
 
                     //新增记分规则，双方DP差距超过137的话，
                     //按加减10或22处理：高分赢低分 高分加10低分减10，低分赢高分，低分加22，高分减22.
@@ -290,6 +279,27 @@ router.post('/score', function (req, res) {
                             ptResult.ptB += 4
                             console.log(usernameB, '首胜多加4DP', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
+                    }
+
+                    // 3分钟以内结束的决斗，胜者不加DP，负者照常扣DP。 平局不扣DP不加DP   : 把开始时间+3分钟，如果加完比结束时间靠后，说明比赛时间不足三分钟
+                    var isLess3Min = moment(start).add(1, 'm').isAfter(moment(end));
+                    if (isLess3Min) {
+                        if (winner === usernameA) {
+                            ptResult.ptA = userA.pt
+                            console.log(usernameA, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
+                        }
+                        if (winner === usernameB) {
+                            ptResult.ptB = userB.pt
+                            console.log(usernameB, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
+                        }
+                    }
+
+                    // 2018.4.23 0秒的决斗，双方都不扣分 -- 星光
+                    var sametime = start == end
+                    if (sametime) {
+                        ptResult.ptA = userA.pt;
+                        ptResult.ptB = userB.pt;
+                        console.log(usernameA, usernameB, '当局有人决斗时间一样 0s 双方不加分不扣分。', moment(start).format('YYYY-MM-DD HH:mm'))
                     }
 
                     queries.push(`update user_info set exp = ${expResult.expA}, pt = ${ptResult.ptA}, 
@@ -837,7 +847,7 @@ router.post('/votes', function (req, res) {
         let multiple = req.body.multiple || false;
         let max = req.body.max || 2;
 
-        var now = moment().format('YYYY-MM-DD HH:mm')
+        var now = moment().format('YYYY-MM-DD HH:mm');
 
         var sql = `insert into votes (title, options, create_time, start_time, end_time, status, multiple, max) values (
                     '${title}',
@@ -2263,7 +2273,7 @@ router.get('/firstwin', function (req, res) {
             function (activity, callback) {
                 // var end = activity.end;
                 // console.log(end);
-                var xx = moment(end).add(1, 'day').format('YYYY-MM-DD HH:mm')
+                // var xx = moment(end).add(1, 'day').format('YYYY-MM-DD HH:mm')
                 // console.log(xx);
                 var sql2 = `select count(*) from battle_history where type ='athletic' and isfirstwin='t' and ( (usernameA = '${username}' AND  userscorea > userscoreb ) OR (usernameB = '${username}' AND userscoreb > userscorea) ) and start_time > '${activity.start}'  and start_time < '${activity.end}' `
 

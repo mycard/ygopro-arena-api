@@ -3,30 +3,37 @@
 
 var superagent = require('superagent')
 var moment = require('moment')
+var start = '2018-04-23 09:45:19.000000'
+var end = '2018-04-23 09:45:18.000000'
+var isLess3Min = moment(start).add(1, 'm').isAfter(moment(end));
 
+console.log(isLess3Min)
 
+var sametime = start == end
+
+console.log(sametime)
 // var url = 'https://mycard.moe/ygopro/api/score'
-var url = 'http://localhost:3000/api/score'
-console.log( moment().format())
-superagent
-    .post(url)
-    .send({
-        accesskey: "XnvGjNG8jttfjYWhtqtgRfWBtyEwjMaF",
-        usernameA: "Joe1991",
-        usernameB: "zh99998",
-        userscoreA: 1,
-        userscoreB: 2,
-        start: moment().format(),
-        end: moment().add(6,'m').format(),
-        arena: 'athletic' // 'athletic' 竞技 or 'entertain' 娱乐
-    })
-    .end(function (err, res) {
-        if (err) {
-            console.log(err)
-            return
-        }
-        console.log(res.text)
-    })
+// var url = 'http://localhost:3000/api/score'
+// console.log( moment().format())
+// superagent
+//     .post(url)
+//     .send({
+//         accesskey: "XnvGjNG8jttfjYWhtqtgRfWBtyEwjMaF",
+//         usernameA: "Joe1991",
+//         usernameB: "zh99998",
+//         userscoreA: 1,
+//         userscoreB: 2,
+//         start: moment().format(),
+//         end: moment().add(6,'m').format(),
+//         arena: 'athletic' // 'athletic' 竞技 or 'entertain' 娱乐
+//     })
+//     .end(function (err, res) {
+//         if (err) {
+//             console.log(err)
+//             return
+//         }
+//         console.log(res.text)
+//     })
 
 // var Utils = require('./utils/utils')
 
