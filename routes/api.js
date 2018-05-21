@@ -270,16 +270,7 @@ router.post('/score', function (req, res) {
                         }
                     }
 
-                    if (firstWin) {
-                        if (winner === usernameA) {
-                            ptResult.ptA += 4
-                            console.log(usernameA, '首胜多加4DP', moment(start).format('YYYY-MM-DD HH:mm'))
-                        }
-                        if (winner === usernameB) {
-                            ptResult.ptB += 4
-                            console.log(usernameB, '首胜多加4DP', moment(start).format('YYYY-MM-DD HH:mm'))
-                        }
-                    }
+
 
                     // 3分钟以内结束的决斗，胜者不加DP，负者照常扣DP。 平局不扣DP不加DP   : 把开始时间+3分钟，如果加完比结束时间靠后，说明比赛时间不足三分钟
                     var isLess3Min = moment(start).add(1, 'm').isAfter(moment(end));
@@ -295,11 +286,22 @@ router.post('/score', function (req, res) {
                     }
 
                     // 2018.4.23 0秒的决斗，双方都不扣分 -- 星光
-                    var sametime = start == end
-                    if (sametime) {
-                        ptResult.ptA = userA.pt;
-                        ptResult.ptB = userB.pt;
-                        console.log(usernameA, usernameB, '当局有人决斗时间一样 0s 双方不加分不扣分。', moment(start).format('YYYY-MM-DD HH:mm'))
+                    // var sametime = start == end
+                    // if (sametime) {
+                    //     ptResult.ptA = userA.pt;
+                    //     ptResult.ptB = userB.pt;
+                    //     console.log(usernameA, usernameB, '当局有人决斗时间一样 0s 双方不加分不扣分。', moment(start).format('YYYY-MM-DD HH:mm'))
+                    // }
+
+                    if (firstWin) {
+                        if (winner === usernameA) {
+                            ptResult.ptA += 4
+                            console.log(usernameA, '首胜多加4DP', moment(start).format('YYYY-MM-DD HH:mm'))
+                        }
+                        if (winner === usernameB) {
+                            ptResult.ptB += 4
+                            console.log(usernameB, '首胜多加4DP', moment(start).format('YYYY-MM-DD HH:mm'))
+                        }
                     }
 
                     queries.push(`update user_info set exp = ${expResult.expA}, pt = ${ptResult.ptA}, 
