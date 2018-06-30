@@ -8,7 +8,7 @@ let Utils = {
             return { ptA: rA, ptB: rB }
         }
 
-        let k = 32
+        let k = 24
         let eA = 1 / (1 + Math.pow(10, (rB - rA) / 400))
         let eB = 1 / (1 + Math.pow(10, (rA - rB) / 400))
 

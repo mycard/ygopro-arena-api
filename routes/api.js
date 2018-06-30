@@ -147,6 +147,12 @@ var filter = new Filter({ chineseList: dirtyWords.words });
 
 router.post('/score', function (req, res) {
     let accesskey = req.body.accesskey
+
+    if (config.accesskey !== accesskey) {
+        console.error('accesskey error', accesskey)
+        return res.status(403).send('accesskey error')
+    }
+
     let usernameA = req.body.usernameA
     let usernameB = req.body.usernameB
     let userscoreA = req.body.userscoreA || 0
@@ -244,28 +250,28 @@ router.post('/score', function (req, res) {
                     //按加减10或22处理：高分赢低分 高分加10低分减10，低分赢高分，低分加22，高分减22.
                     if (userA.pt - userB.pt > 137) {
                         if (winner === usernameA) {
-                            ptResult.ptA = userA.pt + 10
-                            ptResult.ptB = userB.pt - 10
+                            ptResult.ptA = userA.pt + 8
+                            ptResult.ptB = userB.pt - 8
                             console.log(userA.pt, userB.pt, '当局分差过大,高分赢低分', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
 
                         if (winner === usernameB) {
-                            ptResult.ptA = userA.pt - 22
-                            ptResult.ptB = userB.pt + 22
+                            ptResult.ptA = userA.pt - 16
+                            ptResult.ptB = userB.pt + 16
                             console.log(userA.pt, userB.pt, '当局分差过大,低分赢高分', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
                     }
 
                     if (userB.pt - userA.pt > 137) {
                         if (winner === usernameA) {
-                            ptResult.ptA = userA.pt + 22
-                            ptResult.ptB = userB.pt - 22
+                            ptResult.ptA = userA.pt + 16
+                            ptResult.ptB = userB.pt - 16
                             console.log(userA.pt, userB.pt, '当局分差过大,低分赢高分', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
 
                         if (winner === usernameB) {
-                            ptResult.ptA = userA.pt - 10
-                            ptResult.ptB = userB.pt + 10
+                            ptResult.ptA = userA.pt - 8
+                            ptResult.ptB = userB.pt + 8
                             console.log(userA.pt, userB.pt, '当局分差过大,高分赢低分', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
                     }
