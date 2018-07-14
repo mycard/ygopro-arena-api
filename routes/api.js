@@ -164,6 +164,10 @@ router.post('/score', function (req, res) {
     if (!usernameA || !usernameB) {
         return res.status(404).send('username can not be null')
     }
+	
+    if (userscoreA == -5 && userscoreB == -5) {
+	return res.status(200).send('ghost match wont calculate the score.');    
+    }
 
     pool.connect(function (err, client, done) {
         if (err) {
