@@ -161,6 +161,10 @@ router.post('/score', function (req, res) {
     let end = req.body.end
     let arena = req.body.arena || 'entertain'
 
+    if (userscoreA == -5 && userscoreB == -5) {
+	return res.status(200).send('ghost match wont calculate the score.');    
+    }
+	
     if (!usernameA || !usernameB) {
         return res.status(404).send('username can not be null')
     }
