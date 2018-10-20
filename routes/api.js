@@ -245,7 +245,6 @@ router.post('/score', function (req, res) {
                     let expResult = utils.getExpScore(userA.exp, userB.exp, userscoreA, userscoreB)
 
 
-
                     //新增记分规则，双方DP差距超过137的话，
                     //按加减10或22处理：高分赢低分 高分加10低分减10，低分赢高分，低分加22，高分减22.
                     if (userA.pt - userB.pt > 137) {
@@ -1829,10 +1828,11 @@ router.post('/ads', function (req, res) {
         let implurl = req.body.implurl;
         let clkurl = req.body.clkurl;
         let status = req.body.status || true;
+        let type = req.body.type || 1;
 
         var now = moment().format('YYYY-MM-DD HH:mm')
 
-        var sql = `insert into ads (name, desctext, imgp_url, imgm_url, click_ref, click_url, impl_url, status, update_time, create_time) values (
+        var sql = `insert into ads (name, desctext, imgp_url, imgm_url, click_ref, click_url, impl_url, status, update_time, create_time, type) values (
                     '${name}',
                     '${desc}',
                     '${imgp}',
@@ -1842,7 +1842,8 @@ router.post('/ads', function (req, res) {
                     '${implurl}',
                     '${status}',
                     '${now}',
-                    '${now}'
+                    '${now}',
+                    '${type}'
                     )`;
 
         if (id) {
@@ -1855,7 +1856,8 @@ router.post('/ads', function (req, res) {
                     click_url = '${clkurl}',
                     impl_url = '${implurl}',
                     status = '${status}',
-                    update_time = '${now}'
+                    update_time = '${now}',
+                    type = ${type}
                     where id = '${id}'`;
         }
 
@@ -2110,10 +2112,12 @@ router.get('/getAd', function (req, res) {
 
         var user = req.query.user;
 
+        var type = req.query.type || 1;
+
         var now = moment().format('YYYY-MM-DD HH:mm:ss')
 
         // 可用总数 
-        var sql1 = `SELECT count(*) from ads where status='t' `
+        var sql1 = `SELECT count(*) from ads where status='t' and type='${type}';`
         console.log(sql1)
 
         async.waterfall([
@@ -2144,7 +2148,7 @@ router.get('/getAd', function (req, res) {
                 var total = rows[0].count - 0
                 //返回随机的一个 
                 // SELECT myid FROM mytable OFFSET floor(random()*N) LIMIT 1;
-                var sql2 = `SELECT * from ads where status='t' OFFSET floor(random() * ${total}) LIMIT 1 `
+                var sql2 = `SELECT * from ads where status='t' and type='${type}' OFFSET floor(random() * ${total}) LIMIT 1 `
                 console.log(sql2)
                 client.query(sql2, function (err, result) {
                     done()
