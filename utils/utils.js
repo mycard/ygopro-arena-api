@@ -15,26 +15,26 @@ let Utils = {
         let rrA = rA + k * (sA - eA)
         
         // 加分高于16
-        if( (rrA - rA) > 16 ) {
-            rrA  = rA + 16;
-        }
+        // if( (rrA - rA) > 16 ) {
+        //     rrA  = rA + 16;
+        // }
 
-        // 扣分低于8
-        if( (rA - rrA) < 8 ) {
-            rrA = rA - 8;
-        }
+        // // 扣分低于8
+        // if( (rA - rrA) < 8 ) {
+        //     rrA = rA - 8;
+        // }
 
-        let rrB = rB + k * (sB - eB)
+        // let rrB = rB + k * (sB - eB)
 
-        // 加分高于16
-        if( (rrB - rB) > 16 ) {
-            rrB  = rB + 16;
-        }
+        // // 加分高于16
+        // if( (rrB - rB) > 16 ) {
+        //     rrB  = rB + 16;
+        // }
 
-        // 扣分低于8
-        if( (rB - rrB) < 8 ) {
-            rrB = rB - 8;
-        }
+        // // 扣分低于8
+        // if( (rB - rrB) < 8 ) {
+        //     rrB = rB - 8;
+        // }
 
         return { ptA: rrA, ptB: rrB }
     },
