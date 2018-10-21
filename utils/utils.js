@@ -24,7 +24,7 @@ let Utils = {
         //     rrA = rA - 8;
         // }
 
-        // let rrB = rB + k * (sB - eB)
+        let rrB = rB + k * (sB - eB)
 
         // // 加分高于16
         // if( (rrB - rB) > 16 ) {
