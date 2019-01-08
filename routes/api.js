@@ -162,9 +162,9 @@ router.post('/score', function (req, res) {
     let arena = req.body.arena || 'entertain'
 
     if (userscoreA == -5 && userscoreB == -5) {
-	return res.status(200).send('ghost match wont calculate the score.');    
+        return res.status(200).send('ghost match wont calculate the score.');
     }
-	
+
     if (!usernameA || !usernameB) {
         return res.status(404).send('username can not be null')
     }
@@ -2020,6 +2020,74 @@ router.post('/adSwitchChange', function (req, res) {
         });
     });
 });
+
+
+
+router.get('/label', function (req, res) {
+    pool.connect(function (err, client, done) {
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+
+        var sql = "select config_value from site_config where config_key = 'label'"
+        console.log(sql)
+
+        client.query(sql, function (err, result) {
+            done()
+            var text = result.rows[0].config_value
+
+            var response = {};
+            if (err) {
+                console.log(err)
+                response.code = 500;
+            } else {
+                response.code = 200;
+                response.text = text;
+            }
+            res.json(response);
+        });
+      
+    });
+
+});
+
+
+router.post('/label', function (req, res) {
+    // to run a query we can acquire a client from the pool,
+    // run a query on the client, and then return the client to the pool
+    pool.connect(function (err, client, done) {
+
+        if (err) {
+            done()
+            return console.error('error fetching client from pool', err);
+        }
+
+        let labelone = req.body.labelone;
+
+
+        var sql = `update site_config set 
+                    config_value = '${labelone}'
+                    where config_key = 'label'`;
+
+        console.log(sql);
+
+        client.query(sql, function (err, result) {
+            done();
+
+            var response = {};
+            if (err) {
+                console.log(err)
+                response.code = 500;
+            } else {
+                response.code = 200;
+            }
+            res.json(response);
+        });
+    });
+});
+
 
 
 router.post('/activity', function (req, res) {
