@@ -250,7 +250,7 @@ router.post('/score', function (req, res) {
 
 
                     //新增记分规则，双方DP差距超过137的话，
-                    //按加减10或22处理：高分赢低分 高分加10低分减10，低分赢高分，低分加22，高分减22.
+                    //按加减8或16处理：高分赢低分 高分加8低分减8，低分赢高分，低分加16，高分减16.
                     if (userA.pt - userB.pt > 137) {
                         if (winner === usernameA) {
                             ptResult.ptA = userA.pt + 8
@@ -278,8 +278,6 @@ router.post('/score', function (req, res) {
                             console.log(userA.pt, userB.pt, '当局分差过大,高分赢低分', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
                     }
-
-
 
                     // 3分钟以内结束的决斗，胜者不加DP，负者照常扣DP。 平局不扣DP不加DP   : 把开始时间+3分钟，如果加完比结束时间靠后，说明比赛时间不足三分钟
                     var isLess3Min = moment(start).add(1, 'm').isAfter(moment(end));
