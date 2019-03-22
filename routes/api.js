@@ -11,6 +11,7 @@ var moment = require('moment')
 var _ = require('lodash')
 var async = require('async')
 var fs = require('fs');
+var request = require('superagent');
 
 var config = require('../db.config')
 var cardinfo = require('../cardinfo')
@@ -191,7 +192,7 @@ router.post('/score', function (req, res) {
         }
 
         var ep = new eventproxy();
-        ep.all('query_userA', 'query_userB', function (userA, userB) {
+        ep.all(['query_userA', 'query_userB'], ['query_deckA', 'query_deckB'], function (userA, userB, deckA, deckB) {
             var queries = []
 
             let paramA = {
@@ -357,7 +358,9 @@ router.post('/score', function (req, res) {
                     '${start}',
                     '${end}',
                     '${winner}',
-                    '${firstWin}'
+                    '${firstWin}', 
+                    '${deckA}',
+                    '${deckB}'
                     )`)
 
                     queries.map(function (q) {
@@ -457,6 +460,36 @@ router.post('/score', function (req, res) {
             }
         })
 
+        if (req.body.userdeckA) {
+            request.post(process.env.DECK_IDENTIFIER_PATH).send({
+                deck: req.body.userdeckA
+            }).on('end', function (err, result) {
+                if (err) {
+                    console.log("failed to identify deck: " + err);
+                    ep.emit('query_deckA', 'deck identify error');
+                } else {
+                    ep.emit('query_deckA', result.deck);
+
+                }
+            });
+        } else
+            ep.emit('query_deckA', "no deck")
+
+
+        if (req.body.userdeckB) {
+            request.post(process.env.DECK_IDENTIFIER_PATH).send({
+                deck: req.body.userdeckB
+            }).on('end', function (err, result) {
+                if (err) {
+                    console.log("failed to identify deck: " + err);
+                    ep.emit('query_deckB', 'deck identify error');
+                } else {
+                    ep.emit('query_deckB', result.deck);
+                }
+            });
+        } else
+            ep.emit('query_deckB', "no deck")
+            
         res.json({ msg: 'success' })
     })
 })
