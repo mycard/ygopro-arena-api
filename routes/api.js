@@ -461,22 +461,23 @@ router.post('/score', function (req, res) {
         })
 
         if (req.body.userdeckA) {
-            request.post(process.env.DECK_IDENTIFIER_PATH).send({
+            request.post(process.env.DECK_IDENTIFIER_PATH).type('form').send({
                 deck: req.body.userdeckA
             }).then(function (result) {
-                console.log(result);
-                ep.emit('query_deckA', result.body);
+                ep.emit('query_deckA', result.body.deck);
+            }).catch(function(err) {
+                console.log(err);
             });
         } else
             ep.emit('query_deckA', JSON.parse(request.body).deck)
 
 
         if (req.body.userdeckB) {
-            request.post(process.env.DECK_IDENTIFIER_PATH).send({
+            request.post(process.env.DECK_IDENTIFIER_PATH).type('form').send({
                 deck: req.body.userdeckB
             }).then(function (result) {
                 console.log(result);
-                ep.emit('query_deckB', result.body);
+                ep.emit('query_deckB', result.body.deck);
             });
         } else
             ep.emit('query_deckB', "no deck")
