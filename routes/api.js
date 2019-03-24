@@ -463,29 +463,20 @@ router.post('/score', function (req, res) {
         if (req.body.userdeckA) {
             request.post(process.env.DECK_IDENTIFIER_PATH).send({
                 deck: req.body.userdeckA
-            }).on('end', function (err, result) {
-                if (err) {
-                    console.log("failed to identify deck: " + err);
-                    ep.emit('query_deckA', 'deck identify error');
-                } else {
-                    ep.emit('query_deckA', result.deck);
-
-                }
+            }).then(function (result) {
+                console.log(result);
+                ep.emit('query_deckA', result.body);
             });
         } else
-            ep.emit('query_deckA', "no deck")
+            ep.emit('query_deckA', JSON.parse(request.body).deck)
 
 
         if (req.body.userdeckB) {
             request.post(process.env.DECK_IDENTIFIER_PATH).send({
                 deck: req.body.userdeckB
-            }).on('end', function (err, result) {
-                if (err) {
-                    console.log("failed to identify deck: " + err);
-                    ep.emit('query_deckB', 'deck identify error');
-                } else {
-                    ep.emit('query_deckB', result.deck);
-                }
+            }).then(function (result) {
+                console.log(result);
+                ep.emit('query_deckB', result.body);
             });
         } else
             ep.emit('query_deckB', "no deck")
