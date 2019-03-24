@@ -476,8 +476,9 @@ router.post('/score', function (req, res) {
             request.post(process.env.DECK_IDENTIFIER_PATH).type('form').send({
                 deck: req.body.userdeckB
             }).then(function (result) {
-                console.log(result);
                 ep.emit('query_deckB', result.body.deck);
+            }).catch(function(err) {
+                console.log(err);
             });
         } else
             ep.emit('query_deckB', "no deck")
