@@ -469,7 +469,7 @@ router.post('/score', function (req, res) {
                 console.log(err);
             });
         } else
-            ep.emit('query_deckA', JSON.parse(request.body).deck)
+            ep.emit('query_deckA', "no deck")
 
 
         if (req.body.userdeckB) {
