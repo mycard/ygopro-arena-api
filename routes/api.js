@@ -126,7 +126,7 @@ var j = schedule.scheduleJob('30 30 0 1 * *', function () {
         if (err)
             return console.error('error running monthly scheduleJob', err);
         else
-            pool.query('select collect_win_lose_rate($1, $2)', [lower_limit, higher_limit], (err, result) => {
+            pool.query('select q($1, $2)', [lower_limit, higher_limit], (err, result) => {
                 if (err) console.error('error running monthly scheduleJob', err);
             });
     });
@@ -248,10 +248,10 @@ router.post('/score', function (req, res) {
                     paramB['athletic_draw'] = 1
                 }
 
-                var queryFirsrWinSql = `select count(*) from battle_history where type ='athletic' and ( (usernameA = '${winner}' AND  userscorea > userscoreb ) OR (usernameB = '${winner}' AND userscoreb > userscorea) ) and start_time > '${today}' `
+                var queryFirsrWinSql = `select count(*) from battle_history where type ='athletic' and ( (usernameA = ? AND  userscorea > userscoreb ) OR (usernameB = ? AND userscoreb > userscorea) ) and start_time > ? `
                 console.log(queryFirsrWinSql)
 
-                client.query(queryFirsrWinSql, function (err, result) {
+                client.query(queryFirsrWinSql,[winner, winner, today], function (err, result) {
                     done()
                     var total = 0;
                     if (!err) {

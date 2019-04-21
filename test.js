@@ -12,16 +12,17 @@ console.log(isLess3Min)
 var sametime = start == end
 
 console.log(sametime)
-// var url = 'https://mycard.moe/ygopro/api/score'
-
+// var url = 'https://api.mycard.moe/ygopro/arena/score'
 var url = 'http://localhost:3000/api/score'
-console.log( moment().format())
+
+// var url = 'http://localhost:3000/api/user?username=Joe1991'
+// console.log( moment().format())
 superagent
     .post(url)
     .send({
         accesskey: "XnvGjNG8jttfjYWhtqtgRfWBtyEwjMaF",
         usernameA: "Joe1991",
-        usernameB: "zh99998",
+        usernameB: "Joe1991gtest",
         userscoreA: 3,
         userscoreB: 2,
         start: moment().format(),
