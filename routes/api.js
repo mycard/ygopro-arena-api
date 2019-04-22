@@ -185,6 +185,9 @@ router.post('/score', function (req, res) {
         return res.status(404).send('username can not be null')
     }
 
+    usernameA = usernameA.replace(/'/g, "");
+    usernameB = usernameB.replace(/'/g, "");
+
     pool.connect(function (err, client, done) {
         if (err) {
             console.error('error fetching client from pool', err);
@@ -249,10 +252,10 @@ router.post('/score', function (req, res) {
                     paramB['athletic_draw'] = 1
                 }
 
-                var queryFirsrWinSql = `select count(*) from battle_history where type ='athletic' and ( (usernameA = ? AND  userscorea > userscoreb ) OR (usernameB = ? AND userscoreb > userscorea) ) and start_time > ? `
+                var queryFirsrWinSql = `select count(*) from battle_history where type ='athletic' and ( (usernameA= '${winner}' AND userscorea > userscoreb ) OR (usernameB= '${winner}' AND userscoreb > userscorea) ) and start_time > '${today}' `
                 console.log(queryFirsrWinSql)
 
-                client.query(queryFirsrWinSql,[winner, winner, today], function (err, result) {
+                client.query(queryFirsrWinSql, function (err, result) {
                     done()
                     var total = 0;
                     if (!err) {
@@ -465,7 +468,7 @@ router.post('/score', function (req, res) {
                 deck: req.body.userdeckA
             }).then(function (result) {
                 ep.emit('query_deckA', result.body.deck);
-            }).catch(function(err) {
+            }).catch(function (err) {
                 console.log(err);
             });
         } else
@@ -477,12 +480,12 @@ router.post('/score', function (req, res) {
                 deck: req.body.userdeckB
             }).then(function (result) {
                 ep.emit('query_deckB', result.body.deck);
-            }).catch(function(err) {
+            }).catch(function (err) {
                 console.log(err);
             });
         } else
             ep.emit('query_deckB', "no deck")
-            
+
         res.json({ msg: 'success' })
     })
 })
@@ -2087,7 +2090,7 @@ router.get('/label', function (req, res) {
             }
             res.json(response);
         });
-      
+
     });
 
 });
