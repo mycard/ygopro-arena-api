@@ -127,7 +127,7 @@ var j = schedule.scheduleJob('30 30 0 1 * *', function () {
         if (err)
             return console.error('error running monthly scheduleJob', err);
         else
-            pool.query('select q($1, $2)', [lower_limit, higher_limit], (err, result) => {
+            pool.query('select collect_win_lose_rate($1, $2)', [lower_limit, higher_limit], (err, result) => {
                 if (err) console.error('error running monthly scheduleJob', err);
             });
     });
