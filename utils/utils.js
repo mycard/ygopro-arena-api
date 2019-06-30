@@ -30,9 +30,9 @@ let Utils = {
             diffA = -8;
         }
 
-        if (diffA < 0 && diffA < -16) {
+        if (diffA < 0 && diffA < -15) {
             console.log("diffA 扣分大于16 按16分结算", diffA);
-            diffA = -16;
+            diffA = -15;
         }
 
         let rrA = rA + diffA;
@@ -56,9 +56,9 @@ let Utils = {
             diffB = -8;
         }
 
-        if (diffB < 0 && diffB < -16) {
+        if (diffB < 0 && diffB < -15) {
             console.log("diffB 扣分大于16 按16分结算", diffB);
-            diffB = -16;
+            diffB = -15;
         }
 
         let rrB = rB + diffB;
