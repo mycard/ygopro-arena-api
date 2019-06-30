@@ -100,13 +100,13 @@ var schedule = require('node-schedule');
 var j = schedule.scheduleJob('30 30 0 1 * *', function () {
     console.log('The scheduleJob run on first day of every month!', moment().format('YYYY-MM-DD HH:mm'));
 
-    /*
+
     pool.connect(function (err, client, done) {
         if (err) {
             return console.error('error fetching client from pool', err);
         }
 
-        let sql = `update user_info set pt = (pt - (pt - 1000) * 0.4 )
+        let sql = `update user_info set pt = (pt - (pt - 1000) * 0.5 )
                     where pt > 1000`;
 
         client.query(sql, function (err, result) {
@@ -117,21 +117,45 @@ var j = schedule.scheduleJob('30 30 0 1 * *', function () {
             console.log(result)
         });
     })
-    */
-    let time = moment().subtract(1, 'month');
-    let season = time.format('YYYY-MM');
-    let higher_limit = time.format('YYYY-MM-01 00:00:01');
-    let lower_limit = moment().subtract(1, 'day').format('YYYY-MM-DD 23:59:59');
-    let base = 1000;
-    pool.query('select monthly_user_historical_record($1::text, $2, $3::boolean, true)', [season, base, false], (err, result) => {
-        if (err)
-            return console.error('error running monthly scheduleJob', err);
-        else
-            pool.query('select collect_win_lose_rate($1, $2)', [lower_limit, higher_limit], (err, result) => {
-                if (err) console.error('error running monthly scheduleJob', err);
-            });
-    });
+
+    // let time = moment().subtract(1, 'month');
+    // let season = time.format('YYYY-MM');
+    // let higher_limit = time.format('YYYY-MM-01 00:00:01');
+    // let lower_limit = moment().subtract(1, 'day').format('YYYY-MM-DD 23:59:59');
+    // let base = 1000;
+    // pool.query('select monthly_user_historical_record($1::text, $2, $3::boolean, true)', [season, base, false], (err, result) => {
+    //     if (err)
+    //         return console.error('error running monthly scheduleJob', err);
+    //     else
+    //         pool.query('select collect_win_lose_rate($1, $2)', [lower_limit, higher_limit], (err, result) => {
+    //             if (err) console.error('error running monthly scheduleJob', err);
+    //         });
+    // });
 });
+
+
+schedule.scheduleJob('0 0 0 1 7 *', function () {
+
+    console.log('The scheduleJob run on 1 July !', moment().format('YYYY-MM-DD HH:mm'));
+   
+    pool.connect(function (err, client, done) {
+        if (err) {
+            return console.error('error fetching client from pool', err);
+        }
+
+        let sql = `update user_info set pt = 1000`;
+
+        client.query(sql, function (err, result) {
+            done();
+            if (err) {
+                return console.error('error running monthly scheduleJob', err);
+            }
+            console.log(result)
+        });
+    })
+
+});
+
 
 var Filter = require('bad-words-chinese');
 var dirtyWords = require('../dirtyWordsChinese.json');
@@ -278,7 +302,7 @@ router.post('/score', function (req, res) {
                         }
 
                         if (winner === usernameB) {
-                            ptResult.ptA = userA.pt - 16
+                            ptResult.ptA = userA.pt - 15
                             ptResult.ptB = userB.pt + 16
                             console.log(userA.pt, userB.pt, '当局分差过大,低分赢高分', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
@@ -287,7 +311,7 @@ router.post('/score', function (req, res) {
                     if (userB.pt - userA.pt > 137) {
                         if (winner === usernameA) {
                             ptResult.ptA = userA.pt + 16
-                            ptResult.ptB = userB.pt - 16
+                            ptResult.ptB = userB.pt - 15
                             console.log(userA.pt, userB.pt, '当局分差过大,低分赢高分', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
 
@@ -321,12 +345,12 @@ router.post('/score', function (req, res) {
 
                     if (firstWin) {
                         if (winner === usernameA) {
-                            ptResult.ptA += 4
-                            console.log(usernameA, '首胜多加4DP', moment(start).format('YYYY-MM-DD HH:mm'))
+                            ptResult.ptA += 5
+                            console.log(usernameA, '首胜多加5DP', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
                         if (winner === usernameB) {
-                            ptResult.ptB += 4
-                            console.log(usernameB, '首胜多加4DP', moment(start).format('YYYY-MM-DD HH:mm'))
+                            ptResult.ptB += 5
+                            console.log(usernameB, '首胜多加5DP', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
                     }
 
