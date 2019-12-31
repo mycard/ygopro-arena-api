@@ -97,7 +97,7 @@ pool.on('error', function (err, client) {
  */
 var schedule = require('node-schedule');
 // 每月的1日0点30分30秒触发 ：'30 30 0 1 * *'
-var j = schedule.scheduleJob('30 30 0 1 * *', function () {
+var j = schedule.scheduleJob('0 0 0 1 * *', function () {
     console.log('The scheduleJob run on first day of every month!', moment().format('YYYY-MM-DD HH:mm'));
 
 
@@ -133,11 +133,23 @@ var j = schedule.scheduleJob('30 30 0 1 * *', function () {
     // });
 });
 
+// cron job 
 
-schedule.scheduleJob('0 0 0 1 7 *', function () {
+/**
+	*    *    *    *    *    *
+	┬    ┬    ┬    ┬    ┬    ┬
+	│    │    │    │    │    |
+	│    │    │    │    │    └ day of week (0 - 7) (0 or 7 is Sun)
+	│    │    │    │    └───── month (1 - 12)
+	│    │    │    └────────── day of month (1 - 31)
+	│    │    └─────────────── hour (0 - 23)
+	│    └──────────────────── minute (0 - 59)
+	└───────────────────────── second (0 - 59, OPTIONAL)
+ */
+schedule.scheduleJob('1 1 0 1 1 *', function () {
 
-    console.log('The scheduleJob run on 1 July !', moment().format('YYYY-MM-DD HH:mm'));
-   
+    console.log('The scheduleJob run on 1 Jan !', moment().format('YYYY-MM-DD HH:mm'));
+
     pool.connect(function (err, client, done) {
         if (err) {
             return console.error('error fetching client from pool', err);
@@ -333,6 +345,14 @@ router.post('/score', function (req, res) {
                             ptResult.ptB = userB.pt
                             console.log(usernameB, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
+                    }
+
+                    // 处理-9的情况
+                    if (userscoreA === -9) {
+                        ptResult.ptA = userA.pt - 2;
+                    }
+                    if (userscoreB === -9) {
+                        ptResult.ptB = userB.pt - 2;
                     }
 
                     // 2018.4.23 0秒的决斗，双方都不扣分 -- 星光
