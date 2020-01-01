@@ -207,8 +207,8 @@ router.post('/score', function (req, res) {
 
     let usernameA = req.body.usernameA
     let usernameB = req.body.usernameB
-    let userscoreA = req.body.userscoreA || 0
-    let userscoreB = req.body.userscoreB || 0
+    let userscoreA = parseInt(req.body.userscoreA) || 0
+    let userscoreB = parseInt(req.body.userscoreB) || 0
     let start = req.body.start
     let end = req.body.end
     let arena = req.body.arena || 'entertain'
