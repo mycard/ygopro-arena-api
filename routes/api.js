@@ -269,26 +269,26 @@ router.post('/score', function (req, res) {
 
                 // 真实得分 S（胜=1分，和=0.5分，负=0分）
                 let sa = 0, sb = 0
-                if (userscoreA > userscoreB) {
+                if (userscoreA > userscoreB || userscoreB === -9) {
                     sa = 1
                     paramA['athletic_win'] = 1
                     paramB['athletic_lose'] = 1
                     winner = usernameA
                 }
-                if (userscoreA < userscoreB) {
+                else if (userscoreA < userscoreB || userscoreA === -9) {
                     sb = 1
                     paramA['athletic_lose'] = 1
                     paramB['athletic_win'] = 1
                     winner = usernameB
                 }
-                if (userscoreA === userscoreB) {
+                else {
                     sa = 0.5
                     sb = 0.5
                     paramA['athletic_draw'] = 1
                     paramB['athletic_draw'] = 1
                 }
 
-                var queryFirsrWinSql = `select count(*) from battle_history where type ='athletic' and ( (usernameA= '${winner}' AND userscorea > userscoreb ) OR (usernameB= '${winner}' AND userscoreb > userscorea) ) and start_time > '${today}' `
+                var queryFirsrWinSql = `select count(*) from battle_history where type ='athletic' and userscorea != -5 and userscoreb != -5 and ( (usernameA= '${winner}' AND userscorea > userscoreb ) OR (usernameB= '${winner}' AND userscoreb > userscorea) ) and start_time > '${today}' `
                 console.log(queryFirsrWinSql)
 
                 client.query(queryFirsrWinSql, function (err, result) {
@@ -303,10 +303,23 @@ router.post('/score', function (req, res) {
                     let ptResult = utils.getEloScore(userA.pt, userB.pt, sa, sb)
                     let expResult = utils.getExpScore(userA.exp, userB.exp, userscoreA, userscoreB)
 
+                    // 处理开局退房的情况
+                    var pre_exit = false;
+                    if (userscoreA === -5 || userscoreB === -5) {
+                        pre_exit = true;
+                        firstWin = false;
+                        ptResult.ptA = userA.pt;
+                        ptResult.ptB = userB.pt;
+                        if (userscoreA === -9) {
+                            ptResult.ptA = userA.pt - 2;
+                        } else if (userscoreB === -9) {
+                            ptResult.ptB = userB.pt - 2;
+                        }
+                    }
 
                     //新增记分规则，双方DP差距超过137的话，
                     //按加减8或16处理：高分赢低分 高分加8低分减8，低分赢高分，低分加16，高分减16.
-                    if (userA.pt - userB.pt > 137) {
+                    if (!pre_exit && userA.pt - userB.pt > 137) {
                         if (winner === usernameA) {
                             ptResult.ptA = userA.pt + 8
                             ptResult.ptB = userB.pt - 8
@@ -320,7 +333,7 @@ router.post('/score', function (req, res) {
                         }
                     }
 
-                    if (userB.pt - userA.pt > 137) {
+                    if (!pre_exit && userB.pt - userA.pt > 137) {
                         if (winner === usernameA) {
                             ptResult.ptA = userA.pt + 16
                             ptResult.ptB = userB.pt - 15
@@ -336,7 +349,7 @@ router.post('/score', function (req, res) {
 
                     // 3分钟以内结束的决斗，胜者不加DP，负者照常扣DP。 平局不扣DP不加DP   : 把开始时间+3分钟，如果加完比结束时间靠后，说明比赛时间不足三分钟
                     var isLess3Min = moment(start).add(1, 'm').isAfter(moment(end));
-                    if (isLess3Min) {
+                    if (!pre_exit && isLess3Min) {
                         if (winner === usernameA) {
                             ptResult.ptA = userA.pt
                             console.log(usernameA, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
@@ -345,14 +358,6 @@ router.post('/score', function (req, res) {
                             ptResult.ptB = userB.pt
                             console.log(usernameB, '当局有人存在早退，胜利不加分', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
-                    }
-
-                    // 处理-9的情况
-                    if (userscoreA === -9) {
-                        ptResult.ptA = userA.pt - 2;
-                    }
-                    if (userscoreB === -9) {
-                        ptResult.ptB = userB.pt - 2;
                     }
 
                     // 2018.4.23 0秒的决斗，双方都不扣分 -- 星光
