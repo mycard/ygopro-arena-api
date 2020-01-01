@@ -312,8 +312,10 @@ router.post('/score', function (req, res) {
                         ptResult.ptB = userB.pt;
                         if (userscoreA === -9) {
                             ptResult.ptA = userA.pt - 2;
+                            console.log(usernameA, '开局退房', moment(start).format('YYYY-MM-DD HH:mm'))
                         } else if (userscoreB === -9) {
                             ptResult.ptB = userB.pt - 2;
+                            console.log(usernameB, '开局退房', moment(start).format('YYYY-MM-DD HH:mm'))
                         }
                     }
 
