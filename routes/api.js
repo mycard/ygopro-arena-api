@@ -118,19 +118,18 @@ var j = schedule.scheduleJob('0 0 0 1 * *', function () {
         });
     })
 
-    // let time = moment().subtract(1, 'month');
-    // let season = time.format('YYYY-MM');
-    // let higher_limit = time.format('YYYY-MM-01 00:00:01');
-    // let lower_limit = moment().subtract(1, 'day').format('YYYY-MM-DD 23:59:59');
-    // let base = 1000;
-    // pool.query('select monthly_user_historical_record($1::text, $2, $3::boolean, true)', [season, base, false], (err, result) => {
-    //     if (err)
-    //         return console.error('error running monthly scheduleJob', err);
-    //     else
-    //         pool.query('select collect_win_lose_rate($1, $2)', [lower_limit, higher_limit], (err, result) => {
-    //             if (err) console.error('error running monthly scheduleJob', err);
-    //         });
-    // });
+    let time = moment().subtract(1, 'month');
+    let season = time.format('YYYY-MM');
+    let higher_limit = time.format('YYYY-MM-01 00:00:01');
+    let lower_limit = moment().subtract(1, 'day').format('YYYY-MM-DD 23:59:59');    let base = 1000;
+    pool.query('select monthly_user_historical_record($1::text, $2, $3::boolean, true)', [season, base, false], (err, result) => {
+         if (err)
+             return console.error('error running monthly scheduleJob', err);
+         else
+             pool.query('select collect_win_lose_rate($1, $2)', [lower_limit, higher_limit], (err, result) => {
+                 if (err) console.error('error running monthly scheduleJob', err);
+             });
+    });
 });
 
 // cron job 
