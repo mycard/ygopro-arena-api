@@ -108,14 +108,15 @@ var j = schedule.scheduleJob('0 0 0 1 * *', function () {
 
         let sql = `update user_info set pt = (pt - (pt - 1000) * 0.5 )
                     where pt > 1000`;
-
-        client.query(sql, function (err, result) {
-            done();
-            if (err) {
-                return console.error('error running monthly scheduleJob', err);
-            }
-            console.log(result)
-        });
+        
+	// Monthly pt reduce will be done in function monthly_user_historical_record()
+        //client.query(sql, function (err, result) {
+        //    done();
+        //    if (err) {
+        //        return console.error('error running monthly scheduleJob', err);
+        //    }
+        //    console.log(result)
+        //});
     })
 
     let time = moment().subtract(1, 'month');
