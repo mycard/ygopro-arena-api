@@ -1776,6 +1776,11 @@ router.get('/history', function (req, res) {
         console.log(sql);
 
         client.query(sql, function (err, result) {
+
+            if (err) { 
+                return console.error('error running query', sql, err);
+            }
+
             var total = result.rows[0].count
 
             var sql2 = `SELECT * from battle_history order by start_time desc limit ${page_num} offset ${offset}`
@@ -1798,7 +1803,7 @@ router.get('/history', function (req, res) {
                 //call `done()` to release the client back to the pool
                 done()
                 if (err) {
-                    return console.error('error running query', err)
+                    return console.error('error running query', sql2, err)
                 }
                 res.json({
                     total: total - 0,
