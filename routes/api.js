@@ -1551,15 +1551,24 @@ router.get('/deckdata/:id', function (req, res) {
     var spellCardArr = []
 
     _.each(main, function (value, key) {
-        mainCardArr.push({ id: key, num: value })
+        mainCardArr.push({
+            id: key,
+            num: value
+        })
     })
 
     _.each(extra, function (value, key) {
-        extraCardArr.push({ id: key, num: value })
+        extraCardArr.push({
+            id: key,
+            num: value
+        })
     })
 
     _.each(side, function (value, key) {
-        sideCardArr.push({ id: key, num: value })
+        sideCardArr.push({
+            id: key,
+            num: value
+        })
     })
 
 
