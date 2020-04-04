@@ -12,3 +12,4 @@ upload/
 plan.md
 query.sql
 test*
+/tools/api.js
