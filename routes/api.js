@@ -704,9 +704,11 @@ router.get('/report', function (req, res) {
             to_date = moment(req.query.to_date).format('YYYY-MM-DD')
         }
 
+        const time_args = [`${from_date} 00:00:00`, `${to_date} 00:00:00`];
+        
         async.parallel({
             entertainTotal: function (callback) {
-                var sql = `SELECT count(*) from battle_history where type = 'entertain' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT count(*) from battle_history where type = 'entertain' and start_time >= $1 and start_time < $2;`
                 console.log(sql)
                 client.query(sql, function (err, result) {
                     done()
@@ -719,9 +721,9 @@ router.get('/report', function (req, res) {
             },
 
             entertainDisconnect: function (callback) {
-                var sql = `SELECT count(*) from battle_history where type = 'entertain' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00' and (userscorea<0 or userscoreb<0);`
+                var sql = `SELECT count(*) from battle_history where type = 'entertain' and start_time >= $1 and start_time < $2 and (userscorea<0 or userscoreb<0);`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -732,9 +734,9 @@ router.get('/report', function (req, res) {
             },
 
             entertainUsers: function (callback) {
-                var sql = `SELECT count(DISTINCT usernamea) from battle_history where type = 'entertain' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT count(DISTINCT usernamea) from battle_history where type = 'entertain' and start_time >= $1 and start_time < $2;`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -745,9 +747,9 @@ router.get('/report', function (req, res) {
             },
 
             athleticTotal: function (callback) {
-                var sql = `SELECT count(*) from battle_history where type = 'athletic' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT count(*) from battle_history where type = 'athletic' and start_time >= $1 and start_time < $2;`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -758,9 +760,9 @@ router.get('/report', function (req, res) {
             },
 
             athleticDisconnect: function (callback) {
-                var sql = `SELECT count(*) from battle_history where type = 'athletic' and start_time>= '${from_date} 00:00:00' and (userscorea<0 or userscoreb<0) and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT count(*) from battle_history where type = 'athletic' and (userscorea<0 or userscoreb<0) and start_time >= $1 and start_time < $2;`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -771,9 +773,9 @@ router.get('/report', function (req, res) {
             },
 
             athleticUsers: function (callback) {
-                var sql = `SELECT count(DISTINCT usernamea) from battle_history where type = 'athletic' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT count(DISTINCT usernamea) from battle_history where type = 'athletic' and start_time >= $1 and start_time < $2;`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -784,9 +786,9 @@ router.get('/report', function (req, res) {
             },
 
             totalActive: function (callback) {
-                var sql = `SELECT count(DISTINCT usernamea) from battle_history where  start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT count(DISTINCT usernamea) from battle_history where  start_time >= $1 and start_time < $2;`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -798,9 +800,9 @@ router.get('/report', function (req, res) {
 
             //以小时为维度 计算每小时的战斗场数 竞技场
             hourlyAthletic: function (callback) {
-                var sql = `SELECT start_time FROM battle_history WHERE type = 'athletic' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT start_time FROM battle_history WHERE type = 'athletic' and start_time >= $1 and start_time < $2;`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -811,9 +813,9 @@ router.get('/report', function (req, res) {
             },
             //以小时为维度 计算每小时的战斗场数 娱乐场
             hourlyEntertain: function (callback) {
-                var sql = `SELECT start_time FROM battle_history WHERE type = 'entertain' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT start_time FROM battle_history WHERE type = 'entertain' and start_time >= $1 and start_time < $2;`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
