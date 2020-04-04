@@ -1551,24 +1551,15 @@ router.get('/deckdata/:id', function (req, res) {
     var spellCardArr = []
 
     _.each(main, function (value, key) {
-        mainCardArr.push({
-            id: key,
-            num: value
-        })
+        mainCardArr.push({ id: key, num: value })
     })
 
     _.each(extra, function (value, key) {
-        extraCardArr.push({
-            id: key,
-            num: value
-        })
+        extraCardArr.push({ id: key, num: value })
     })
 
     _.each(side, function (value, key) {
-        sideCardArr.push({
-            id: key,
-            num: value
-        })
+        sideCardArr.push({ id: key, num: value })
     })
 
 
@@ -1582,10 +1573,7 @@ router.get('/deckdata/:id', function (req, res) {
 
                 db.serialize(function () {
 
-                    db.get({
-                        text: `SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = $1`,
-                        values: [parseFloat(item.id)]
-                    }, function (err, row) {
+                    db.get(`SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = ${item.id}`, function (err, row) {
 
                         if (err) {
                             console.error(err)
@@ -1627,10 +1615,7 @@ router.get('/deckdata/:id', function (req, res) {
             async.each(extraCardArr, function (item, callback2) {
                 db.serialize(function () {
 
-                    db.get({
-                        text: `SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = $1`,
-                        values: [parseFloat(item.id)]
-                    }, function (err, row) {
+                    db.get(`SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = ${item.id}`, function (err, row) {
 
                         if (err) {
                             console.error(err)
@@ -1659,10 +1644,7 @@ router.get('/deckdata/:id', function (req, res) {
             async.each(sideCardArr, function (item, callback2) {
                 db.serialize(function () {
 
-                    db.get({
-                        text: `SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = $1`,
-                        values: [parseFloat(item.id)]
-                    }, function (err, row) {
+                    db.get(`SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = ${item.id}`, function (err, row) {
 
                         if (err) {
                             console.error(err)
