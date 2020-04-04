@@ -619,10 +619,7 @@ router.get('/cardinfo', function (req, res) {
 
     db.serialize(function () {
 
-        db.get({
-            text: `SELECT name , desc, str1, str2, str3 FROM  texts where id = $1`,
-            values: [parseFloat(id)]
-        }, function (err, row) {
+        db.get(`SELECT name , desc, str1, str2, str3 FROM  texts where id = ${id}`, function (err, row) {
 
             if (err) {
                 console.error(err)
@@ -639,10 +636,7 @@ router.get('/cardinfo', function (req, res) {
             result.str2 = row.str2
             result.str3 = row.str3
 
-            db.get({
-                text: `SELECT * FROM  datas where id = $1`,
-                values: [parseFloat(id)]
-            }, function (err, row) {
+            db.get(`SELECT * FROM  datas where id = ${id}`, function (err, row) {
                 if (err) {
                     console.error(err)
                     return res.status(500).send('sqlite error!')
