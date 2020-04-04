@@ -108,8 +108,8 @@ var j = schedule.scheduleJob('0 0 0 1 * *', function () {
 
         let sql = `update user_info set pt = (pt - (pt - 1000) * 0.5 )
                     where pt > 1000`;
-        
-	// Monthly pt reduce will be done in function monthly_user_historical_record()
+
+        // Monthly pt reduce will be done in function monthly_user_historical_record()
         //client.query(sql, function (err, result) {
         //    done();
         //    if (err) {
@@ -122,14 +122,15 @@ var j = schedule.scheduleJob('0 0 0 1 * *', function () {
     let time = moment().subtract(1, 'month');
     let season = time.format('YYYY-MM');
     let higher_limit = time.format('YYYY-MM-01 00:00:01');
-    let lower_limit = moment().subtract(1, 'day').format('YYYY-MM-DD 23:59:59');    let base = 1000;
+    let lower_limit = moment().subtract(1, 'day').format('YYYY-MM-DD 23:59:59');
+    let base = 1000;
     pool.query('select monthly_user_historical_record($1::text, $2, $3::boolean, true)', [season, base, false], (err, result) => {
-         if (err)
-             return console.error('error running monthly scheduleJob', err);
-         else
-             pool.query('select collect_win_lose_rate($1, $2)', [lower_limit, higher_limit], (err, result) => {
-                 if (err) console.error('error running monthly scheduleJob', err);
-             });
+        if (err)
+            return console.error('error running monthly scheduleJob', err);
+        else
+            pool.query('select collect_win_lose_rate($1, $2)', [lower_limit, higher_limit], (err, result) => {
+                if (err) console.error('error running monthly scheduleJob', err);
+            });
     });
 });
 
@@ -171,7 +172,9 @@ schedule.scheduleJob('1 1 0 1 1 *', function () {
 
 var Filter = require('bad-words-chinese');
 var dirtyWords = require('../dirtyWordsChinese.json');
-var filter = new Filter({ chineseList: dirtyWords.words });
+var filter = new Filter({
+    chineseList: dirtyWords.words
+});
 
 // 数据迁移 rating_index => user_info
 // router.get('/mr',function(req,res){
@@ -268,27 +271,29 @@ router.post('/score', function (req, res) {
                 var today = moment(start).format('YYYY-MM-DD')
 
                 // 真实得分 S（胜=1分，和=0.5分，负=0分）
-                let sa = 0, sb = 0
+                let sa = 0,
+                    sb = 0
                 if (userscoreA > userscoreB || userscoreB === -9) {
                     sa = 1
                     paramA['athletic_win'] = 1
                     paramB['athletic_lose'] = 1
                     winner = usernameA
-                }
-                else if (userscoreA < userscoreB || userscoreA === -9) {
+                } else if (userscoreA < userscoreB || userscoreA === -9) {
                     sb = 1
                     paramA['athletic_lose'] = 1
                     paramB['athletic_win'] = 1
                     winner = usernameB
-                }
-                else {
+                } else {
                     sa = 0.5
                     sb = 0.5
                     paramA['athletic_draw'] = 1
                     paramB['athletic_draw'] = 1
                 }
 
-                var queryFirsrWinSql = {text: `select count(*) from battle_history where type ='athletic' and userscorea != -5 and userscoreb != -5 and ( (usernameA= $1 AND userscorea > userscoreb ) OR (usernameB= $1 AND userscoreb > userscorea) ) and start_time > $2 `, values: [winner, today]}
+                var queryFirsrWinSql = {
+                    text: `select count(*) from battle_history where type ='athletic' and userscorea != -5 and userscoreb != -5 and ( (usernameA= $1 AND userscorea > userscoreb ) OR (usernameB= $1 AND userscoreb > userscorea) ) and start_time > $2 `,
+                    values: [winner, today]
+                }
                 console.log(queryFirsrWinSql)
 
                 client.query(queryFirsrWinSql, function (err, result) {
@@ -381,21 +386,28 @@ router.post('/score', function (req, res) {
                         }
                     }
 
-                    queries.push({text: `update user_info set exp = $2, pt = $3, 
+                    queries.push({
+                        text: `update user_info set exp = $2, pt = $3, 
                     athletic_win = athletic_win + $4, 
                     athletic_lose = athletic_lose + $5, 
                     athletic_draw = athletic_draw + $6, 
                     athletic_all = athletic_all + $7
-                    where username = $1`, values: [userA.username, parseFloat(expResult.expA), parseFloat(ptResult.ptA), parseFloat(paramA.athletic_win), parseFloat(paramA.athletic_lose), parseFloat(paramA.athletic_draw), parseFloat(paramA.athletic_all)]})
+                    where username = $1`,
+                        values: [userA.username, parseFloat(expResult.expA), parseFloat(ptResult.ptA), parseFloat(paramA.athletic_win), parseFloat(paramA.athletic_lose), parseFloat(paramA.athletic_draw), parseFloat(paramA.athletic_all)]
+                    })
 
-                    queries.push({text: `update user_info set exp = $2, pt = $3, 
+                    queries.push({
+                        text: `update user_info set exp = $2, pt = $3, 
                     athletic_win = athletic_win + $4, 
                     athletic_lose = athletic_lose + $5, 
                     athletic_draw = athletic_draw + $6, 
                     athletic_all = athletic_all + $7
-                    where username = $1`, values: [userB.username, parseFloat(expResult.expB), parseFloat(ptResult.ptB), parseFloat(paramB.athletic_win), parseFloat(paramB.athletic_lose), parseFloat(paramB.athletic_draw), parseFloat(paramB.athletic_all)]})
+                    where username = $1`,
+                        values: [userB.username, parseFloat(expResult.expB), parseFloat(ptResult.ptB), parseFloat(paramB.athletic_win), parseFloat(paramB.athletic_lose), parseFloat(paramB.athletic_draw), parseFloat(paramB.athletic_all)]
+                    })
 
-                    queries.push({text: `insert into battle_history values (
+                    queries.push({
+                        text: `insert into battle_history values (
                     $1,
                     $2,
                     $3,
@@ -415,7 +427,9 @@ router.post('/score', function (req, res) {
                     $17, 
                     $18,
                     $19
-                    )`, values: [userA.username, userB.username, userscoreA, userscoreB, expResult.expA, expResult.expB, userA.exp, userB.exp, ptResult.ptA, ptResult.ptB, userA.pt, userB.pt, arena, start, end, winner, firstWin, deckA, deckB]})
+                    )`,
+                        values: [userA.username, userB.username, userscoreA, userscoreB, expResult.expA, expResult.expB, userA.exp, userB.exp, ptResult.ptA, ptResult.ptB, userA.pt, userB.pt, arena, start, end, winner, firstWin, deckA, deckB]
+                    })
 
                     queries.map(function (q) {
                         // console.log(q)
@@ -446,23 +460,30 @@ router.post('/score', function (req, res) {
                     paramB['entertain_draw'] = 1
                 }
 
-                queries.push({text: `update user_info set exp = $2,  
+                queries.push({
+                    text: `update user_info set exp = $2,  
                     entertain_win = entertain_win + $3, 
                     entertain_lose = entertain_lose + $4, 
                     entertain_draw = entertain_draw + $5, 
                     entertain_all = entertain_all + $6
-                    where username = $1`, values: [userA.username, parseFloat(expResult.expA), parseFloat(paramA.entertain_win), parseFloat(paramA.entertain_lose), parseFloat(paramA.entertain_draw), parseFloat(paramA.entertain_all)]})
+                    where username = $1`,
+                    values: [userA.username, parseFloat(expResult.expA), parseFloat(paramA.entertain_win), parseFloat(paramA.entertain_lose), parseFloat(paramA.entertain_draw), parseFloat(paramA.entertain_all)]
+                })
 
-                queries.push({text: `update user_info set exp = $2, 
+                queries.push({
+                    text: `update user_info set exp = $2, 
                     entertain_win = entertain_win + $3, 
                     entertain_lose = entertain_lose + $4, 
                     entertain_draw = entertain_draw + $5, 
                     entertain_all = entertain_all + $6
-                    where username = $1`, values: [userB.username, parseFloat(expResult.expB), parseFloat(paramB.entertain_win), parseFloat(paramB.entertain_lose), parseFloat(paramB.entertain_draw), parseFloat(paramB.entertain_all)]})
+                    where username = $1`,
+                    values: [userB.username, parseFloat(expResult.expB), parseFloat(paramB.entertain_win), parseFloat(paramB.entertain_lose), parseFloat(paramB.entertain_draw), parseFloat(paramB.entertain_all)]
+                })
 
 
 
-                queries.push({text: `insert into battle_history values (
+                queries.push({
+                    text: `insert into battle_history values (
                     $1,
                     $2,
                     $3,
@@ -480,7 +501,9 @@ router.post('/score', function (req, res) {
                     $13,
                     $14,
                     $15
-                    )`, values: [userA.username, userB.username, userscoreA, userscoreB, expResult.expA, expResult.expB, userA.exp, userB.exp, userA.pt, userB.pt, arena, start, end, winner, firstWin]})
+                    )`,
+                    values: [userA.username, userB.username, userscoreA, userscoreB, expResult.expA, expResult.expB, userA.exp, userB.exp, userA.pt, userB.pt, arena, start, end, winner, firstWin]
+                })
 
                 queries.map(function (q) {
                     // console.log(q)
@@ -494,7 +517,10 @@ router.post('/score', function (req, res) {
 
         })
 
-        client.query({text: `select * from user_info where username = $1`, values: [usernameA]}).on('end', function (result) {
+        client.query({
+            text: `select * from user_info where username = $1`,
+            values: [usernameA]
+        }).on('end', function (result) {
             done()
             if (result.rows.length > 0) {
                 ep.emit('query_userA', result.rows[0])
@@ -504,7 +530,10 @@ router.post('/score', function (req, res) {
             }
         })
 
-        client.query({text: `select * from user_info where username = $1`, values: [usernameB]}).on('end', function (result) {
+        client.query({
+            text: `select * from user_info where username = $1`,
+            values: [usernameB]
+        }).on('end', function (result) {
             done()
             if (result.rows.length > 0) {
                 ep.emit('query_userB', result.rows[0])
@@ -537,7 +566,9 @@ router.post('/score', function (req, res) {
         } else
             ep.emit('query_deckB', "no deck")
 
-        res.json({ msg: 'success' })
+        res.json({
+            msg: 'success'
+        })
     })
 })
 
@@ -588,7 +619,10 @@ router.get('/cardinfo', function (req, res) {
 
     db.serialize(function () {
 
-        db.get({text: `SELECT name , desc, str1, str2, str3 FROM  texts where id = $1`, values: [parseFloat(id)]}, function (err, row) {
+        db.get({
+            text: `SELECT name , desc, str1, str2, str3 FROM  texts where id = $1`,
+            values: [parseFloat(id)]
+        }, function (err, row) {
 
             if (err) {
                 console.error(err)
@@ -605,7 +639,10 @@ router.get('/cardinfo', function (req, res) {
             result.str2 = row.str2
             result.str3 = row.str3
 
-            db.get({text: `SELECT * FROM  datas where id = $1`, values: [parseFloat(id)]}, function (err, row) {
+            db.get({
+                text: `SELECT * FROM  datas where id = $1`,
+                values: [parseFloat(id)]
+            }, function (err, row) {
                 if (err) {
                     console.error(err)
                     return res.status(500).send('sqlite error!')
@@ -705,7 +742,7 @@ router.get('/report', function (req, res) {
         }
 
         const time_args = [`${from_date} 00:00:00`, `${to_date} 00:00:00`];
-        
+
         async.parallel({
             entertainTotal: function (callback) {
                 var sql = `SELECT count(*) from battle_history where type = 'entertain' and start_time >= $1 and start_time < $2;`
@@ -955,7 +992,8 @@ router.post('/votes', function (req, res) {
 
         var now = moment().format('YYYY-MM-DD HH:mm');
 
-        var sql = {text: `insert into votes (title, options, create_time, start_time, end_time, status, multiple, max) values (
+        var sql = {
+            text: `insert into votes (title, options, create_time, start_time, end_time, status, multiple, max) values (
                     $1,
                     $2,
                     $3,
@@ -964,10 +1002,13 @@ router.post('/votes', function (req, res) {
                     $6,
                     $7,
                     $8
-                    )`, values: [title, options, now, start_time, end_time, status, multiple, max]};
+                    )`,
+            values: [title, options, now, start_time, end_time, status, multiple, max]
+        };
 
         if (id) {
-            sql = {text: `update votes set 
+            sql = {
+                text: `update votes set 
                     title = $1, 
                     options = $2, 
                     start_time = $3, 
@@ -975,7 +1016,9 @@ router.post('/votes', function (req, res) {
                     status = $5,
                     multiple = $6, 
                     max = $7
-                    where id = $8`, values: [title, options, start_time, end_time, status, multiple, max, id]};
+                    where id = $8`,
+                values: [title, options, start_time, end_time, status, multiple, max, id]
+            };
         }
 
         console.log(sql);
@@ -1009,9 +1052,12 @@ router.post('/voteStatus', function (req, res) {
 
         var now = moment().format('YYYY-MM-DD HH:mm')
 
-        var sql = {text: `update votes set 
+        var sql = {
+            text: `update votes set 
                     status = $1
-                    where id = $2`, values: [status, id]};
+                    where id = $2`,
+            values: [status, id]
+        };
 
         console.log(sql);
 
@@ -1065,34 +1111,43 @@ router.post('/submitVote', function (req, res) {
 
         if (multiple === "true") {
             _.each(opids, function (id) {
-                sql1 = {text: `insert into vote_result (vote_id, option_id, userid, date_time, create_time) values (
+                sql1 = {
+                    text: `insert into vote_result (vote_id, option_id, userid, date_time, create_time) values (
                     $1,
                     $2,
                     $3,
                     $4,
                     $5
-                    )`, values: [voteid, id, user, date_time, create_time]};
+                    )`,
+                    values: [voteid, id, user, date_time, create_time]
+                };
                 voteResultSqls.push(sql1)
             })
 
         } else {
-            sql1 = {text: `insert into vote_result (vote_id, option_id, userid, date_time, create_time) values (
+            sql1 = {
+                text: `insert into vote_result (vote_id, option_id, userid, date_time, create_time) values (
                     $1,
                     $2,
                     $3,
                     $4,
                     $5
-                    )`, values: [voteid, opid, user, date_time, create_time]};
+                    )`,
+                values: [voteid, opid, user, date_time, create_time]
+            };
             voteResultSqls.push(sql1)
         }
 
 
         console.log(voteResultSqls);
 
-        var sql2 = {text: `update user_info set 
+        var sql2 = {
+            text: `update user_info set 
                     exp = (exp + 1),
                     id = $2
-                    where username = $1`, values: [username, parseFloat(user)]};
+                    where username = $1`,
+            values: [username, parseFloat(user)]
+        };
 
 
         async.waterfall([
@@ -1166,7 +1221,10 @@ router.get('/votes', function (req, res) {
 
         var sql = `SELECT count(*) from votes `
         if (status !== undefined) {
-            sql = {text: `SELECT count(*) from votes where status=$1`, values: [parseFloat(status)]}
+            sql = {
+                text: `SELECT count(*) from votes where status=$1`,
+                values: [parseFloat(status)]
+            }
         }
 
         console.log(sql);
@@ -1175,10 +1233,16 @@ router.get('/votes', function (req, res) {
 
             var total = result.rows[0].count
 
-            var sql2 = {text: `SELECT * from votes order by create_time desc limit $1 offset $2`, values: [parseFloat(page_num), parseFloat(offset)]}
+            var sql2 = {
+                text: `SELECT * from votes order by create_time desc limit $1 offset $2`,
+                values: [parseFloat(page_num), parseFloat(offset)]
+            }
 
             if (status !== undefined) {
-                var sql2 = {text: `SELECT * from votes where status=$1 order by create_time desc limit $2 offset $3`, values: [parseFloat(status), parseFloat(page_num), parseFloat(offset)]}
+                var sql2 = {
+                    text: `SELECT * from votes where status=$1 order by create_time desc limit $2 offset $3`,
+                    values: [parseFloat(status), parseFloat(page_num), parseFloat(offset)]
+                }
             }
 
             console.log(sql2)
@@ -1206,7 +1270,10 @@ router.get('/votes', function (req, res) {
 
                             async.each(options, function (option, callback2) {
 
-                                var queryVoteOptionCount = {text: `SELECT count(*) from vote_result where vote_id=$1 and option_id =$2 `, values: [vateid, option.key]}
+                                var queryVoteOptionCount = {
+                                    text: `SELECT count(*) from vote_result where vote_id=$1 and option_id =$2 `,
+                                    values: [vateid, option.key]
+                                }
 
                                 option_ids.push(String(option.key))
                                 // console.log(queryVoteOptionCount)
@@ -1299,10 +1366,16 @@ router.get('/vote', function (req, res) {
         var now = moment().format('YYYY-MM-DD HH:mm:ss')
 
         // 找出可用投票 1 状态为可用 2 开始时间早于当前时间 3 结束时间大于当前时间 
-        var sql1 = {text: `SELECT * from votes where status='t' and start_time <= $1 and end_time >= $1 order by create_time desc `, values: [now]}
+        var sql1 = {
+            text: `SELECT * from votes where status='t' and start_time <= $1 and end_time >= $1 order by create_time desc `,
+            values: [now]
+        }
         console.log(sql1)
         //找出此user投过的票的vote id， 利用这些vote 过滤已经投过的投票 
-        var sql2 = {text: `SELECT vote_id from vote_result where userid = $1`, values: [user]}
+        var sql2 = {
+            text: `SELECT vote_id from vote_result where userid = $1`,
+            values: [user]
+        }
         //剩下的投票中随机选一个返回
 
         async.waterfall([
@@ -1369,9 +1442,15 @@ router.get('/deckinfo', function (req, res) {
             return console.error('error fetching client from pool', err);
         }
 
-        var sql = {text: `SELECT * from deck_info where name like  $1`, values: ["%" + (name) + "%"]}
+        var sql = {
+            text: `SELECT * from deck_info where name like  $1`,
+            values: ["%" + (name) + "%"]
+        }
         if (version) {
-            sql = {text: `SELECT * from deck_info_history where name = $1 and id= $2`, values: [name, parseFloat(version)]}
+            sql = {
+                text: `SELECT * from deck_info_history where name = $1 and id= $2`,
+                values: [name, parseFloat(version)]
+            }
         }
 
         console.log(sql);
@@ -1389,13 +1468,19 @@ router.get('/deckinfo', function (req, res) {
 
                 var resName = response.data.name
 
-                sql = {text: `SELECT * from deck_info_history where name = $1 order by start_time desc`, values: [resName]}
+                sql = {
+                    text: `SELECT * from deck_info_history where name = $1 order by start_time desc`,
+                    values: [resName]
+                }
                 console.log(sql);
                 client.query(sql, function (err, result) {
                     done()
                     response.history = result.rows
 
-                    sql = {text: `SELECT * from deck_demo where name = $1 order by create_time desc`, values: [resName]}
+                    sql = {
+                        text: `SELECT * from deck_demo where name = $1 order by create_time desc`,
+                        values: [resName]
+                    }
                     console.log(sql);
                     client.query(sql, function (err, result) {
                         done()
@@ -1472,15 +1557,24 @@ router.get('/deckdata/:id', function (req, res) {
     var spellCardArr = []
 
     _.each(main, function (value, key) {
-        mainCardArr.push({ id: key, num: value })
+        mainCardArr.push({
+            id: key,
+            num: value
+        })
     })
 
     _.each(extra, function (value, key) {
-        extraCardArr.push({ id: key, num: value })
+        extraCardArr.push({
+            id: key,
+            num: value
+        })
     })
 
     _.each(side, function (value, key) {
-        sideCardArr.push({ id: key, num: value })
+        sideCardArr.push({
+            id: key,
+            num: value
+        })
     })
 
 
@@ -1494,7 +1588,10 @@ router.get('/deckdata/:id', function (req, res) {
 
                 db.serialize(function () {
 
-                    db.get({text: `SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = $1`, values: [parseFloat(item.id)]}, function (err, row) {
+                    db.get({
+                        text: `SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = $1`,
+                        values: [parseFloat(item.id)]
+                    }, function (err, row) {
 
                         if (err) {
                             console.error(err)
@@ -1536,7 +1633,10 @@ router.get('/deckdata/:id', function (req, res) {
             async.each(extraCardArr, function (item, callback2) {
                 db.serialize(function () {
 
-                    db.get({text: `SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = $1`, values: [parseFloat(item.id)]}, function (err, row) {
+                    db.get({
+                        text: `SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = $1`,
+                        values: [parseFloat(item.id)]
+                    }, function (err, row) {
 
                         if (err) {
                             console.error(err)
@@ -1565,7 +1665,10 @@ router.get('/deckdata/:id', function (req, res) {
             async.each(sideCardArr, function (item, callback2) {
                 db.serialize(function () {
 
-                    db.get({text: `SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = $1`, values: [parseFloat(item.id)]}, function (err, row) {
+                    db.get({
+                        text: `SELECT a.id, a.name ,b.type from texts a left JOIN datas b on a.id=b.id  where a.id = $1`,
+                        values: [parseFloat(item.id)]
+                    }, function (err, row) {
 
                         if (err) {
                             console.error(err)
@@ -1625,14 +1728,17 @@ router.post('/deckdemo', function (req, res) {
 
         var now = moment().format('YYYY-MM-DD HH:mm')
 
-        var sql = {text: `insert into deck_demo (name, author, url, title, file, create_time) values (
+        var sql = {
+            text: `insert into deck_demo (name, author, url, title, file, create_time) values (
                     $1,
                     $2,
                     $3,
                     $4,
                     $5,
                     $6
-                    )`, values: [name, author, img_url, title, file, now]};
+                    )`,
+            values: [name, author, img_url, title, file, now]
+        };
 
         console.log(sql);
 
@@ -1691,27 +1797,36 @@ router.post('/deckinfo', function (req, res) {
         var now = moment().format('YYYY-MM-DD HH:mm')
         if (isNew === "true") {
 
-            sql = {text: `insert into deck_info (name, content, start_time) values (
+            sql = {
+                text: `insert into deck_info (name, content, start_time) values (
                     $1,
                     $2,
                     $3
-                    )`, values: [name, contentStr, now]};
+                    )`,
+                values: [name, contentStr, now]
+            };
         } else {
-            sql = {text: `update deck_info set 
+            sql = {
+                text: `update deck_info set 
                     content = $1, 
                     end_time = $2
-                    where name = $3`, values: [contentStr, now, name]};
+                    where name = $3`,
+                values: [contentStr, now, name]
+            };
         }
 
         console.log(sql);
 
         client.query(sql, function (err, result) {
             done();
-            sql = {text: `insert into deck_info_history (name, content, start_time) values (
+            sql = {
+                text: `insert into deck_info_history (name, content, start_time) values (
                     $1,
                     $2,
                     $3
-                    )`, values: [name, contentStr, now]};
+                    )`,
+                values: [name, contentStr, now]
+            };
             console.log(sql);
 
             client.query(sql, function (err, result) {
@@ -1764,39 +1879,60 @@ router.get('/history', function (req, res) {
         var sql = 'SELECT count(*) from battle_history '
 
         if (username && arena) {
-            sql = {text: `SELECT count(*) from battle_history where (usernamea = $1 or usernameb = $1 ) and type = $2`, values: [username, arena]}
+            sql = {
+                text: `SELECT count(*) from battle_history where (usernamea = $1 or usernameb = $1 ) and type = $2`,
+                values: [username, arena]
+            }
         }
 
         if (username && !arena) {
-            sql = {text: `SELECT count(*) from battle_history where usernamea = $1 or usernameb = $1 `, values: [username]}
+            sql = {
+                text: `SELECT count(*) from battle_history where usernamea = $1 or usernameb = $1 `,
+                values: [username]
+            }
         }
 
         if (!username && arena) {
-            sql = {text: `SELECT count(*) from battle_history where type = $1`, values: [arena]}
+            sql = {
+                text: `SELECT count(*) from battle_history where type = $1`,
+                values: [arena]
+            }
         }
 
         console.log(sql);
 
         client.query(sql, function (err, result) {
 
-            if (err) { 
+            if (err) {
                 return console.error('error running query', sql, err);
             }
 
             var total = result.rows[0].count
 
-            var sql2 = {text: `SELECT * from battle_history order by start_time desc limit $1 offset $2`, values: [parseFloat(page_num), parseFloat(offset)]}
+            var sql2 = {
+                text: `SELECT * from battle_history order by start_time desc limit $1 offset $2`,
+                values: [parseFloat(page_num), parseFloat(offset)]
+            }
 
             if (username && arena) {
-                sql2 = {text: `SELECT * from battle_history where ( usernamea = $1 or usernameb = $1 ) and type = $2 order by start_time desc limit $3 offset $4`, values: [username, arena, parseFloat(page_num), parseFloat(offset)]}
+                sql2 = {
+                    text: `SELECT * from battle_history where ( usernamea = $1 or usernameb = $1 ) and type = $2 order by start_time desc limit $3 offset $4`,
+                    values: [username, arena, parseFloat(page_num), parseFloat(offset)]
+                }
             }
 
             if (username && !arena) {
-                sql2 = {text: `SELECT * from battle_history where usernamea = $1 or usernameb = $1 order by start_time desc limit $2 offset $3`, values: [username, parseFloat(page_num), parseFloat(offset)]}
+                sql2 = {
+                    text: `SELECT * from battle_history where usernamea = $1 or usernameb = $1 order by start_time desc limit $2 offset $3`,
+                    values: [username, parseFloat(page_num), parseFloat(offset)]
+                }
             }
 
             if (!username && arena) {
-                sql2 = {text: `SELECT * from battle_history where type = $1 order by start_time desc limit $2 offset $3`, values: [arena, parseFloat(page_num), parseFloat(offset)]}
+                sql2 = {
+                    text: `SELECT * from battle_history where type = $1 order by start_time desc limit $2 offset $3`,
+                    values: [arena, parseFloat(page_num), parseFloat(offset)]
+                }
             }
 
             console.log(sql2)
@@ -1851,7 +1987,10 @@ router.get('/user', function (req, res) {
             return res.json(resultData)
         }
 
-        client.query({text: `SELECT * from user_info where username = $1`, values: [username]}, function (err, result) {
+        client.query({
+            text: `SELECT * from user_info where username = $1`,
+            values: [username]
+        }, function (err, result) {
             //call `done()` to release the client back to the pool
             done()
             if (err) {
@@ -1894,13 +2033,19 @@ router.get('/user', function (req, res) {
                     res.json(resultData)
                 });
 
-                client.query({text: `SELECT count(*) from user_info where pt >= $1`, values: [parseFloat(resultData['pt'])]}, function (err, result) {
+                client.query({
+                    text: `SELECT count(*) from user_info where pt >= $1`,
+                    values: [parseFloat(resultData['pt'])]
+                }, function (err, result) {
                     done()
                     resultData['arena_rank'] = result.rows[0]['count']
                     ep.emit('delay', '')
                 })
 
-                client.query({text: `SELECT count(*) from user_info where exp >= $1`, values: [parseFloat(resultData['exp'])]}, function (err, result) {
+                client.query({
+                    text: `SELECT count(*) from user_info where exp >= $1`,
+                    values: [parseFloat(resultData['exp'])]
+                }, function (err, result) {
                     done()
                     resultData['exp_rank'] = result.rows[0]['count']
                     ep.emit('delay', '')
@@ -1936,7 +2081,8 @@ router.post('/ads', function (req, res) {
 
         var now = moment().format('YYYY-MM-DD HH:mm')
 
-        var sql = {text: `insert into ads (name, desctext, imgp_url, imgm_url, click_ref, click_url, impl_url, status, update_time, create_time, type) values (
+        var sql = {
+            text: `insert into ads (name, desctext, imgp_url, imgm_url, click_ref, click_url, impl_url, status, update_time, create_time, type) values (
                     $1,
                     $2,
                     $3,
@@ -1948,10 +2094,13 @@ router.post('/ads', function (req, res) {
                     $9,
                     $9,
                     $10
-                    )`, values: [name, desc, imgp, imgm, clkref, clkurl, implurl, status, now, type]};
+                    )`,
+            values: [name, desc, imgp, imgm, clkref, clkurl, implurl, status, now, type]
+        };
 
         if (id) {
-            sql = {text: `update ads set 
+            sql = {
+                text: `update ads set 
                     name = $1, 
                     desctext = $2, 
                     imgp_url = $3, 
@@ -1962,7 +2111,9 @@ router.post('/ads', function (req, res) {
                     status = $8,
                     update_time = $9,
                     type = $11
-                    where id = $10`, values: [name, desc, imgp, imgm, clkref, clkurl, implurl, status, now, id, parseFloat(type)]};
+                    where id = $10`,
+                values: [name, desc, imgp, imgm, clkref, clkurl, implurl, status, now, id, parseFloat(type)]
+            };
         }
 
         console.log(sql);
@@ -2019,7 +2170,10 @@ router.get('/ads', function (req, res) {
             function (callback) {
                 var sql = `SELECT count(*) from ads `
                 if (status !== undefined) {
-                    sql = {text: `SELECT count(*) from ads where status=$1`, values: [parseFloat(status)]}
+                    sql = {
+                        text: `SELECT count(*) from ads where status=$1`,
+                        values: [parseFloat(status)]
+                    }
                 }
 
                 console.log(sql);
@@ -2036,10 +2190,16 @@ router.get('/ads', function (req, res) {
 
             function (total, callback) {
 
-                var sql2 = {text: `SELECT * from ads order by create_time desc limit $1 offset $2`, values: [parseFloat(page_num), parseFloat(offset)]}
+                var sql2 = {
+                    text: `SELECT * from ads order by create_time desc limit $1 offset $2`,
+                    values: [parseFloat(page_num), parseFloat(offset)]
+                }
 
                 if (status !== undefined) {
-                    var sql2 = {text: `SELECT * from ads where status=$1 order by create_time desc limit $2 offset $3`, values: [parseFloat(status), parseFloat(page_num), parseFloat(offset)]}
+                    var sql2 = {
+                        text: `SELECT * from ads where status=$1 order by create_time desc limit $2 offset $3`,
+                        values: [parseFloat(status), parseFloat(page_num), parseFloat(offset)]
+                    }
                 }
 
                 console.log(sql2)
@@ -2100,9 +2260,12 @@ router.post('/adSwitchChange', function (req, res) {
 
         let status = req.body.status;
 
-        var sql = {text: `update site_config set 
+        var sql = {
+            text: `update site_config set 
                     config_value = $1
-                    where config_key = 'auto_close_ad'`, values: [status]};
+                    where config_key = 'auto_close_ad'`,
+            values: [status]
+        };
 
         console.log(sql);
 
@@ -2167,9 +2330,12 @@ router.post('/label', function (req, res) {
         let labelone = req.body.labelone;
 
 
-        var sql = {text: `update site_config set 
+        var sql = {
+            text: `update site_config set 
                     config_value = $1
-                    where config_key = 'label'`, values: [labelone]};
+                    where config_key = 'label'`,
+            values: [labelone]
+        };
 
         console.log(sql);
 
@@ -2214,9 +2380,12 @@ router.post('/activity', function (req, res) {
 
         var activityStr = JSON.stringify(activity)
 
-        var sql = {text: `update site_config set 
+        var sql = {
+            text: `update site_config set 
                     config_value = $1
-                    where config_key = 'activity'`, values: [activityStr]};
+                    where config_key = 'activity'`,
+            values: [activityStr]
+        };
 
         console.log(sql);
 
@@ -2250,9 +2419,12 @@ router.post('/adsStatus', function (req, res) {
 
         var now = moment().format('YYYY-MM-DD HH:mm')
 
-        var sql = {text: `update ads set 
+        var sql = {
+            text: `update ads set 
                     status = $1
-                    where id = $2`, values: [status, id]};
+                    where id = $2`,
+            values: [status, id]
+        };
 
         console.log(sql);
 
@@ -2289,7 +2461,10 @@ router.get('/getAd', function (req, res) {
         var now = moment().format('YYYY-MM-DD HH:mm:ss')
 
         // 可用总数 
-        var sql1 = {text: `SELECT count(*) from ads where status='t' and type=$1;`, values: [type]}
+        var sql1 = {
+            text: `SELECT count(*) from ads where status='t' and type=$1;`,
+            values: [type]
+        }
         console.log(sql1)
 
         async.waterfall([
@@ -2320,7 +2495,10 @@ router.get('/getAd', function (req, res) {
                 var total = rows[0].count - 0
                 //返回随机的一个 
                 // SELECT myid FROM mytable OFFSET floor(random()*N) LIMIT 1;
-                var sql2 = {text: `SELECT * from ads where status='t' and type=$1 OFFSET floor(random() * $2) LIMIT 1 `, values: [type, parseFloat(total)]}
+                var sql2 = {
+                    text: `SELECT * from ads where status='t' and type=$1 OFFSET floor(random() * $2) LIMIT 1 `,
+                    values: [type, parseFloat(total)]
+                }
                 console.log(sql2)
                 client.query(sql2, function (err, result) {
                     done()
@@ -2371,9 +2549,12 @@ router.post('/adClick', function (req, res) {
             return
         }
 
-        var sql = {text: `update ads set 
+        var sql = {
+            text: `update ads set 
                     clk = clk + 1
-                    where id = $1`, values: [id]};
+                    where id = $1`,
+            values: [id]
+        };
 
         console.log(sql);
 
@@ -2410,9 +2591,12 @@ router.post('/adImpl', function (req, res) {
             return
         }
 
-        var sql = {text: `update ads set 
+        var sql = {
+            text: `update ads set 
                     impl = impl + 1
-                    where id = $1`, values: [id]};
+                    where id = $1`,
+            values: [id]
+        };
 
         console.log(sql);
 
@@ -2459,7 +2643,10 @@ router.get('/firstwin', function (req, res) {
                 // console.log(end);
                 // var xx = moment(end).add(1, 'day').format('YYYY-MM-DD HH:mm')
                 // console.log(xx);
-                var sql2 = {text: `select count(*) from battle_history where type ='athletic' and isfirstwin='t' and ( (usernameA = $1 AND  userscorea > userscoreb ) OR (usernameB = $1 AND userscoreb > userscorea) ) and start_time > $2  and start_time < $3 `, values: [username, activity.start, activity.end]}
+                var sql2 = {
+                    text: `select count(*) from battle_history where type ='athletic' and isfirstwin='t' and ( (usernameA = $1 AND  userscorea > userscoreb ) OR (usernameB = $1 AND userscoreb > userscorea) ) and start_time > $2  and start_time < $3 `,
+                    values: [username, activity.start, activity.end]
+                }
 
                 console.log(sql2)
                 client.query(sql2, function (err, result) {
@@ -2472,7 +2659,10 @@ router.get('/firstwin', function (req, res) {
             function (activity, callback) {
                 var today = moment().format('YYYY-MM-DD')
 
-                var sql2 = {text: `select count(*) from battle_history where type ='athletic' and isfirstwin='t' and ( (usernameA = $1 AND  userscorea > userscoreb ) OR (usernameB = $1 AND userscoreb > userscorea) )  and start_time > $2 `, values: [username, today]}
+                var sql2 = {
+                    text: `select count(*) from battle_history where type ='athletic' and isfirstwin='t' and ( (usernameA = $1 AND  userscorea > userscoreb ) OR (usernameB = $1 AND userscoreb > userscorea) )  and start_time > $2 `,
+                    values: [username, today]
+                }
                 console.log(sql2)
                 client.query(sql2, function (err, result) {
                     done()
@@ -2494,7 +2684,10 @@ router.get('/firstwin', function (req, res) {
 
 createUser = function (username, ep, epEventName) {
     pool.connect(function (err, client, done) {
-        let sql = {text: `insert into user_info (username) values ($1)`, values: [username]}
+        let sql = {
+            text: `insert into user_info (username) values ($1)`,
+            values: [username]
+        }
         console.log(sql)
         client.query(sql, function (err, result) {
             done();
