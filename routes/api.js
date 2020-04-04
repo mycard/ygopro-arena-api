@@ -288,8 +288,11 @@ router.post('/score', function (req, res) {
                     paramB['athletic_draw'] = 1
                 }
 
-                var queryFirsrWinSql = `select count(*) from battle_history where type ='athletic' and userscorea != -5 and userscoreb != -5 and ( (usernameA= '${winner}' AND userscorea > userscoreb ) OR (usernameB= '${winner}' AND userscoreb > userscorea) ) and start_time > '${today}' `
-                console.log(queryFirsrWinSql)
+                var queryFirsrWinSql = {
+                    text: `select count(*) from battle_history where type = 'athletic' and userscorea != -5 and userscoreb != -5 and ( (usernameA= $1 AND userscorea > userscoreb ) OR (usernameB= $1 AND userscoreb > userscorea) ) and start_time > $2 `,
+                    values: [winner, today]
+                };
+                console.log(queryFirsrWinSql);
 
                 client.query(queryFirsrWinSql, function (err, result) {
                     done()
@@ -381,41 +384,86 @@ router.post('/score', function (req, res) {
                         }
                     }
 
-                    queries.push(`update user_info set exp = ${expResult.expA}, pt = ${ptResult.ptA}, 
-                    athletic_win = athletic_win + ${paramA.athletic_win}, 
-                    athletic_lose = athletic_lose + ${paramA.athletic_lose}, 
-                    athletic_draw = athletic_draw + ${paramA.athletic_draw}, 
-                    athletic_all = athletic_all + ${paramA.athletic_all}
-                    where username = '${userA.username}'`)
+                    queries.push({
+                        text: `update user_info set exp = $1, pt = $2, 
+                        athletic_win = athletic_win + $3, 
+                        athletic_lose = athletic_lose + $4, 
+                        athletic_draw = athletic_draw + $5, 
+                        athletic_all = athletic_all + $6}
+                        where username = $7`,
+                        values: [
+                            expResult.expA,
+                            ptResult.ptA,
+                            paramA.athletic_win,
+                            paramA.athletic_lose,
+                            paramA.athletic_draw,
+                            paramA.athletic_all,
+                            userA.username
+                        ]
+                    })
 
-                    queries.push(`update user_info set exp = ${expResult.expB}, pt = ${ptResult.ptB}, 
-                    athletic_win = athletic_win + ${paramB.athletic_win}, 
-                    athletic_lose = athletic_lose + ${paramB.athletic_lose}, 
-                    athletic_draw = athletic_draw + ${paramB.athletic_draw}, 
-                    athletic_all = athletic_all + ${paramB.athletic_all}
-                    where username = '${userB.username}'`)
+                    queries.push({
+                        text: `update user_info set exp = $1, pt = $2, 
+                        athletic_win = athletic_win + $3, 
+                        athletic_lose = athletic_lose + $4, 
+                        athletic_draw = athletic_draw + $5, 
+                        athletic_all = athletic_all + $6}
+                        where username = $7`,
+                        values: [
+                            expResult.expB,
+                            ptResult.ptB,
+                            paramB.athletic_win,
+                            paramB.athletic_lose,
+                            paramB.athletic_draw,
+                            paramB.athletic_all,
+                            userB.username
+                        ]
+                    });
 
-                    queries.push(`insert into battle_history values (
-                    '${userA.username}',
-                    '${userB.username}',
-                    '${userscoreA}',
-                    '${userscoreB}',
-                    '${expResult.expA}',
-                    '${expResult.expB}',
-                    '${userA.exp}',
-                    '${userB.exp}',
-                    '${ptResult.ptA}',
-                    '${ptResult.ptB}',
-                    '${userA.pt}',
-                    '${userB.pt}',
-                    '${arena}',
-                    '${start}',
-                    '${end}',
-                    '${winner}',
-                    '${firstWin}', 
-                    '${deckA}',
-                    '${deckB}'
-                    )`)
+                    queries.push({
+                        text: `insert into battle_history values (
+                            $1,
+                            $2,
+                            $3,
+                            $4,
+                            $5,
+                            $6,
+                            $7,
+                            $8,
+                            $9,
+                            $10,
+                            $11,
+                            $12,
+                            $13,
+                            $14,
+                            $15,
+                            $16,
+                            $17,
+                            $18,
+                            $19,
+                            )`,
+                        values: [
+                            'userA.username',
+                            'userB.username',
+                            'userscoreA',
+                            'userscoreB',
+                            'expResult.expA',
+                            'expResult.expB',
+                            'userA.exp',
+                            'userB.exp',
+                            'ptResult.ptA',
+                            'ptResult.ptB',
+                            'userA.pt',
+                            'userB.pt',
+                            'arena',
+                            'start',
+                            'end',
+                            'winner',
+                            'firstWin', 
+                            'deckA',
+                            'deckB'
+                        ]
+                    })
 
                     queries.map(function (q) {
                         // console.log(q)
@@ -446,41 +494,88 @@ router.post('/score', function (req, res) {
                     paramB['entertain_draw'] = 1
                 }
 
-                queries.push(`update user_info set exp = ${expResult.expA},  
-                    entertain_win = entertain_win + ${paramA.entertain_win}, 
-                    entertain_lose = entertain_lose + ${paramA.entertain_lose}, 
-                    entertain_draw = entertain_draw + ${paramA.entertain_draw}, 
-                    entertain_all = entertain_all + ${paramA.entertain_all}
-                    where username = '${userA.username}'`)
+                queries.push({
+                    text: `update user_info set exp = $1, pt = $2, 
+                    entertain_win = entertain_win + $3, 
+                    entertain_lose = entertain_lose + $4, 
+                    entertain_draw = entertain_draw + $5, 
+                    entertain_all = entertain_all + $6}
+                    where username = $7`,
+                    values: [
+                        expResult.expA,
+                        ptResult.ptA,
+                        paramA.entertain_win,
+                        paramA.entertain_lose,
+                        paramA.entertain_draw,
+                        paramA.entertain_all,
+                        userA.username
+                    ]
+                })
 
-                queries.push(`update user_info set exp = ${expResult.expB}, 
-                    entertain_win = entertain_win + ${paramB.entertain_win}, 
-                    entertain_lose = entertain_lose + ${paramB.entertain_lose}, 
-                    entertain_draw = entertain_draw + ${paramB.entertain_draw}, 
-                    entertain_all = entertain_all + ${paramB.entertain_all}
-                    where username = '${userB.username}'`)
+                queries.push({
+                    text: `update user_info set exp = $1, pt = $2, 
+                    entertain_win = entertain_win + $3, 
+                    entertain_lose = entertain_lose + $4, 
+                    entertain_draw = entertain_draw + $5, 
+                    entertain_all = entertain_all + $6}
+                    where username = $7`,
+                    values: [
+                        expResult.expB,
+                        ptResult.ptB,
+                        paramB.entertain_win,
+                        paramB.entertain_lose,
+                        paramB.entertain_draw,
+                        paramB.entertain_all,
+                        userB.username
+                    ]
+                });
 
 
 
-                queries.push(`insert into battle_history values (
-                    '${userA.username}',
-                    '${userB.username}',
-                    '${userscoreA}',
-                    '${userscoreB}',
-                    '${expResult.expA}',
-                    '${expResult.expB}',
-                    '${userA.exp}',
-                    '${userB.exp}',
-                    '${userA.pt}',
-                    '${userB.pt}',
-                    '${userA.pt}',
-                    '${userB.pt}',
-                    '${arena}',
-                    '${start}',
-                    '${end}',
-                    '${winner}',
-                    '${firstWin}'
-                    )`)
+                queries.push({
+                    text: `insert into battle_history values (
+                        $1,
+                        $2,
+                        $3,
+                        $4,
+                        $5,
+                        $6,
+                        $7,
+                        $8,
+                        $9,
+                        $10,
+                        $11,
+                        $12,
+                        $13,
+                        $14,
+                        $15,
+                        $16,
+                        $17,
+                        $18,
+                        $19,
+                        )`,
+                    values: [
+                        'userA.username',
+                        'userB.username',
+                        'userscoreA',
+                        'userscoreB',
+                        'expResult.expA',
+                        'expResult.expB',
+                        'userA.exp',
+                        'userB.exp',
+                        'ptResult.ptA',
+                        'ptResult.ptB',
+                        'userA.pt',
+                        'userB.pt',
+                        'arena',
+                        'start',
+                        'end',
+                        'winner',
+                        'firstWin', 
+                        'deckA',
+                        'deckB'
+                    ]
+                })
 
                 queries.map(function (q) {
                     // console.log(q)
@@ -494,7 +589,7 @@ router.post('/score', function (req, res) {
 
         })
 
-        client.query(`select * from user_info where username = '${usernameA}'`).on('end', function (result) {
+        client.query(`select * from user_info where username = $1`, [usernameA]).on('end', function (result) {
             done()
             if (result.rows.length > 0) {
                 ep.emit('query_userA', result.rows[0])
@@ -504,7 +599,7 @@ router.post('/score', function (req, res) {
             }
         })
 
-        client.query(`select * from user_info where username = '${usernameB}'`).on('end', function (result) {
+        client.query(`select * from user_info where username = $1`, [usernameB]).on('end', function (result) {
             done()
             if (result.rows.length > 0) {
                 ep.emit('query_userB', result.rows[0])
@@ -588,7 +683,7 @@ router.get('/cardinfo', function (req, res) {
 
     db.serialize(function () {
 
-        db.get(`SELECT name , desc, str1, str2, str3 FROM  texts where id = ${id}`, function (err, row) {
+        db.get(`SELECT name , desc, str1, str2, str3 FROM  texts where id = $1`, [id], function (err, row) {
 
             if (err) {
                 console.error(err)
@@ -605,7 +700,7 @@ router.get('/cardinfo', function (req, res) {
             result.str2 = row.str2
             result.str3 = row.str3
 
-            db.get(`SELECT * FROM  datas where id = ${id}`, function (err, row) {
+            db.get(`SELECT * FROM  datas where id = $1`, [id], function (err, row) {
                 if (err) {
                     console.error(err)
                     return res.status(500).send('sqlite error!')
@@ -704,9 +799,11 @@ router.get('/report', function (req, res) {
             to_date = moment(req.query.to_date).format('YYYY-MM-DD')
         }
 
+        const time_args = [`${from_date} 00:00:00`, `${to_date} 00:00:00`];
+        
         async.parallel({
             entertainTotal: function (callback) {
-                var sql = `SELECT count(*) from battle_history where type = 'entertain' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT count(*) from battle_history where type = 'entertain' and start_time >= $1 and start_time < $2;`
                 console.log(sql)
                 client.query(sql, function (err, result) {
                     done()
@@ -719,9 +816,9 @@ router.get('/report', function (req, res) {
             },
 
             entertainDisconnect: function (callback) {
-                var sql = `SELECT count(*) from battle_history where type = 'entertain' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00' and (userscorea<0 or userscoreb<0);`
+                var sql = `SELECT count(*) from battle_history where type = 'entertain' and start_time >= $1 and start_time < $2 and (userscorea<0 or userscoreb<0);`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -732,9 +829,9 @@ router.get('/report', function (req, res) {
             },
 
             entertainUsers: function (callback) {
-                var sql = `SELECT count(DISTINCT usernamea) from battle_history where type = 'entertain' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT count(DISTINCT usernamea) from battle_history where type = 'entertain' and start_time >= $1 and start_time < $2;`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -745,9 +842,9 @@ router.get('/report', function (req, res) {
             },
 
             athleticTotal: function (callback) {
-                var sql = `SELECT count(*) from battle_history where type = 'athletic' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT count(*) from battle_history where type = 'athletic' and start_time >= $1 and start_time < $2;`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -758,9 +855,9 @@ router.get('/report', function (req, res) {
             },
 
             athleticDisconnect: function (callback) {
-                var sql = `SELECT count(*) from battle_history where type = 'athletic' and start_time>= '${from_date} 00:00:00' and (userscorea<0 or userscoreb<0) and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT count(*) from battle_history where type = 'athletic' and (userscorea<0 or userscoreb<0) and start_time >= $1 and start_time < $2;`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -771,9 +868,9 @@ router.get('/report', function (req, res) {
             },
 
             athleticUsers: function (callback) {
-                var sql = `SELECT count(DISTINCT usernamea) from battle_history where type = 'athletic' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT count(DISTINCT usernamea) from battle_history where type = 'athletic' and start_time >= $1 and start_time < $2;`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -784,9 +881,9 @@ router.get('/report', function (req, res) {
             },
 
             totalActive: function (callback) {
-                var sql = `SELECT count(DISTINCT usernamea) from battle_history where  start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT count(DISTINCT usernamea) from battle_history where  start_time >= $1 and start_time < $2;`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -798,9 +895,9 @@ router.get('/report', function (req, res) {
 
             //以小时为维度 计算每小时的战斗场数 竞技场
             hourlyAthletic: function (callback) {
-                var sql = `SELECT start_time FROM battle_history WHERE type = 'athletic' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT start_time FROM battle_history WHERE type = 'athletic' and start_time >= $1 and start_time < $2;`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -811,9 +908,9 @@ router.get('/report', function (req, res) {
             },
             //以小时为维度 计算每小时的战斗场数 娱乐场
             hourlyEntertain: function (callback) {
-                var sql = `SELECT start_time FROM battle_history WHERE type = 'entertain' and start_time>= '${from_date} 00:00:00' and start_time < '${to_date} 00:00:00';`
+                var sql = `SELECT start_time FROM battle_history WHERE type = 'entertain' and start_time >= $1 and start_time < $2;`
                 console.log(sql)
-                client.query(sql, function (err, result) {
+                client.query(sql, time_args, function (err, result) {
                     done()
                     if (err) {
                         return console.error('error running query', err)
@@ -953,27 +1050,25 @@ router.post('/votes', function (req, res) {
 
         var now = moment().format('YYYY-MM-DD HH:mm');
 
-        var sql = `insert into votes (title, options, create_time, start_time, end_time, status, multiple, max) values (
-                    '${title}',
-                    '${options}',
-                    '${now}',
-                    '${start_time}',
-                    '${end_time}',
-                    '${status}',
-                    '${multiple}',
-                    '${max}'
-                    )`;
+        var sql = {
+            text: `insert into votes (title, options, create_time, start_time, end_time, status, multiple, max) values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            values: [
+                'title',
+                'options',
+                'now',
+                'start_time',
+                'end_time',
+                'status',
+                'multiple',
+                'max'
+            ]
+        };
+
+
 
         if (id) {
-            sql = `update votes set 
-                    title = '${title}', 
-                    options = '${options}', 
-                    start_time = '${start_time}', 
-                    end_time = '${end_time}', 
-                    status = '${status}',
-                    multiple = '${multiple}', 
-                    max = '${max}'
-                    where id = '${id}'`;
+            sql.text = `insert into votes (title, options, create_time, start_time, end_time, status, multiple, max) values ($1, $2, $3, $4, $5, $6, $7, $8) where id = '$9`;
+            sql.values.push(id);
         }
 
         console.log(sql);
@@ -1007,9 +1102,12 @@ router.post('/voteStatus', function (req, res) {
 
         var now = moment().format('YYYY-MM-DD HH:mm')
 
-        var sql = `update votes set 
-                    status = '${status}'
-                    where id = '${id}'`;
+        var sql = {
+            text: `update votes set 
+            status = $1
+            where id = $2`,
+            values: [status, id]
+        }
 
         console.log(sql);
 
@@ -1058,39 +1156,51 @@ router.post('/submitVote', function (req, res) {
         var date_time = moment().format('YYYY-MM-DD')
         var create_time = moment().format('YYYY-MM-DD HH:mm')
 
-        var sql1 = ""
+        var sql1 = {
+            text: "",
+            values: []
+        };
         var voteResultSqls = [];
 
         if (multiple === "true") {
             _.each(opids, function (id) {
-                sql1 = `insert into vote_result (vote_id, option_id, userid, date_time, create_time) values (
-                    '${voteid}',
-                    '${id}',
-                    '${user}',
-                    '${date_time}',
-                    '${create_time}'
-                    )`;
-                voteResultSqls.push(sql1)
+                sql1 = {
+                    text: `insert into vote_result (vote_id, option_id, userid, date_time, create_time) values ($1, $2, $3, $4, $5)`,
+                    values: [
+                        voteid,
+                        id,
+                        user,
+                        date_time,
+                        create_time
+                    ]
+                };
+                voteResultSqls.push(sql1);
             })
 
         } else {
-            sql1 = `insert into vote_result (vote_id, option_id, userid, date_time, create_time) values (
-                    '${voteid}',
-                    '${opid}',
-                    '${user}',
-                    '${date_time}',
-                    '${create_time}'
-                    )`;
-            voteResultSqls.push(sql1)
+            sql1 = {
+                text: `insert into vote_result (vote_id, option_id, userid, date_time, create_time) values ($1, $2, $3, $4, $5)`,
+                values: [
+                    voteid,
+                    id,
+                    user,
+                    date_time,
+                    create_time
+                ]
+            };
+            voteResultSqls.push(sql1);
         }
 
 
         console.log(voteResultSqls);
 
-        var sql2 = `update user_info set 
-                    exp = (exp + 1),
-                    id = ${user}
-                    where username = '${username}'`;
+        var sql2 = {
+            text: `update user_info set 
+            exp = (exp + 1),
+            id = $1
+            where username = $2`,
+            values: [user, username]
+        };
 
 
         async.waterfall([
@@ -1162,9 +1272,13 @@ router.get('/votes', function (req, res) {
         var page_num = req.query.page_num || 15
         var offset = (page_no - 1) * page_num
 
-        var sql = `SELECT count(*) from votes `
+        var sql = {
+            text: `SELECT count(*) from votes `,
+            values: []
+        }
         if (status !== undefined) {
-            sql = `SELECT count(*) from votes where status=${status}`
+            sql.text = `SELECT count(*) from votes where status=$1`
+            sql.values.push(status);
         }
 
         console.log(sql);
@@ -1173,10 +1287,14 @@ router.get('/votes', function (req, res) {
 
             var total = result.rows[0].count
 
-            var sql2 = `SELECT * from votes order by create_time desc limit ${page_num} offset ${offset}`
+            var sql2 = {
+                text: `SELECT * from votes order by create_time desc limit $1 offset $2`,
+                values: [page_num, offset]
+            } 
 
             if (status !== undefined) {
-                var sql2 = `SELECT * from votes where status=${status} order by create_time desc limit ${page_num} offset ${offset}`
+                sql2.texts = `SELECT * from votes where status = $3 order by create_time desc limit $1 offset $2`
+                sql2.values.push(status);
             }
 
             console.log(sql2)
@@ -1204,7 +1322,10 @@ router.get('/votes', function (req, res) {
 
                             async.each(options, function (option, callback2) {
 
-                                var queryVoteOptionCount = `SELECT count(*) from vote_result where vote_id='${vateid}' and option_id ='${option.key}' `
+                                var queryVoteOptionCount = {
+                                    text: `SELECT count(*) from vote_result where vote_id=$1 and option_id =$2 `,
+                                    values: [vateid, option.key]
+                                }
 
                                 option_ids.push(String(option.key))
                                 // console.log(queryVoteOptionCount)
@@ -1235,7 +1356,10 @@ router.get('/votes', function (req, res) {
                             })
                             id_str = id_str.slice(0, -1)
                             id_str = id_str + ")"
-                            var queryVoteCount = `SELECT count(DISTINCT userid) from vote_result where vote_id = '${vateid}' and option_id in ${id_str} `
+                            var queryVoteCount = {
+                                text: `SELECT count(DISTINCT userid) from vote_result where vote_id = $1 and option_id in $1`,
+                                values: [id_str]
+                            }
                             console.log(queryVoteCount)
                             client.query(queryVoteCount, function (err, result) {
                                 //call `done()` to release the client back to the pool
@@ -1297,10 +1421,16 @@ router.get('/vote', function (req, res) {
         var now = moment().format('YYYY-MM-DD HH:mm:ss')
 
         // 找出可用投票 1 状态为可用 2 开始时间早于当前时间 3 结束时间大于当前时间 
-        var sql1 = `SELECT * from votes where status='t' and start_time <= '${now}' and end_time >= '${now}' order by create_time desc `
+        var sql1 = {
+            text: `SELECT * from votes where status='t' and start_time <= $1 and end_time >= $1 order by create_time desc `,
+            values: [now]
+        } 
         console.log(sql1)
         //找出此user投过的票的vote id， 利用这些vote 过滤已经投过的投票 
-        var sql2 = `SELECT vote_id from vote_result where userid = '${user}'`
+        var sql2 = {
+            text: `SELECT vote_id from vote_result where userid = $1`,
+            values: [user]
+        }
         //剩下的投票中随机选一个返回
 
         async.waterfall([
@@ -1367,9 +1497,12 @@ router.get('/deckinfo', function (req, res) {
             return console.error('error fetching client from pool', err);
         }
 
-        var sql = `SELECT * from deck_info where name like  '%${name}%'`
+        var sql = `SELECT * from deck_info where name like  '%${name}%'` // not sure how to change this one
         if (version) {
-            sql = `SELECT * from deck_info_history where name = '${name}' and id= ${version}`
+            sql = {
+                text: `SELECT * from deck_info_history where name = $1 and id= $2`,
+                values: [name, version]
+            }
         }
 
         console.log(sql);
@@ -1385,15 +1518,21 @@ router.get('/deckinfo', function (req, res) {
                 response.code = 200
                 response.data = result.rows[0]
 
-                var resName = response.data.name
+                var resName = [response.data.name]
 
-                sql = `SELECT * from deck_info_history where name = '${resName}' order by start_time desc`
+                sql = {
+                    text: `SELECT * from deck_info_history where name = $1 order by start_time desc`,
+                    values: resName
+                } 
                 console.log(sql);
                 client.query(sql, function (err, result) {
                     done()
                     response.history = result.rows
 
-                    sql = `SELECT * from deck_demo where name = '${resName}' order by create_time desc`
+                    sql = {
+                        text: `SELECT * from deck_demo where name = $1 order by create_time desc`,
+                        values: resName
+                    }
                     console.log(sql);
                     client.query(sql, function (err, result) {
                         done()
