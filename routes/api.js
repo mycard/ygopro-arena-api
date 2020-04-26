@@ -739,8 +739,14 @@ router.get('/report', function (req, res) {
 
         async.parallel({
             entertainTotal: function (callback) {
-                var sql = `SELECT count(*) from battle_history where type = 'entertain' and start_time >= $1 and start_time < $2;`
+               
+                var sql = {
+                    text: `SELECT count(*) from battle_history where type = 'entertain' and start_time >= $1 and start_time < $2;`,
+                    values: time_args
+                }
+
                 console.log(sql)
+
                 client.query(sql, function (err, result) {
                     done()
                     if (err) {
@@ -1070,7 +1076,6 @@ router.post('/voteStatus', function (req, res) {
     });
 });
 
-
 router.post('/submitVote', function (req, res) {
     // to run a query we can acquire a client from the pool,
     // run a query on the client, and then return the client to the pool
@@ -1344,7 +1349,6 @@ router.get('/votes', function (req, res) {
     });
 });
 
-
 router.get('/vote', function (req, res) {
     // to run a query we can acquire a client from the pool,
     // run a query on the client, and then return the client to the pool
@@ -1420,7 +1424,6 @@ router.get('/vote', function (req, res) {
     });
 });
 
-
 router.get('/deckinfo', function (req, res) {
     var name = req.query.name
     var version = req.query.version
@@ -1490,8 +1493,6 @@ router.get('/deckinfo', function (req, res) {
         });
     });
 });
-
-
 
 var file = require("./file.js");
 
@@ -1697,7 +1698,6 @@ router.get('/deckdata/:id', function (req, res) {
 })
 
 //卡组范例提交
-
 router.post('/deckdemo', function (req, res) {
 
     let author = req.body.user;
@@ -2232,7 +2232,6 @@ router.get('/ads', function (req, res) {
     });
 });
 
-
 router.post('/adSwitchChange', function (req, res) {
     // to run a query we can acquire a client from the pool,
     // run a query on the client, and then return the client to the pool
@@ -2269,8 +2268,6 @@ router.post('/adSwitchChange', function (req, res) {
     });
 });
 
-
-
 router.get('/label', function (req, res) {
     pool.connect(function (err, client, done) {
 
@@ -2300,7 +2297,6 @@ router.get('/label', function (req, res) {
     });
 
 });
-
 
 router.post('/label', function (req, res) {
     // to run a query we can acquire a client from the pool,
@@ -2338,8 +2334,6 @@ router.post('/label', function (req, res) {
         });
     });
 });
-
-
 
 router.post('/activity', function (req, res) {
     // to run a query we can acquire a client from the pool,
@@ -2389,7 +2383,6 @@ router.post('/activity', function (req, res) {
     });
 });
 
-
 router.post('/adsStatus', function (req, res) {
     // to run a query we can acquire a client from the pool,
     // run a query on the client, and then return the client to the pool
@@ -2427,7 +2420,6 @@ router.post('/adsStatus', function (req, res) {
         });
     });
 });
-
 
 router.get('/getAd', function (req, res) {
     // to run a query we can acquire a client from the pool,
@@ -2514,7 +2506,6 @@ router.get('/getAd', function (req, res) {
     });
 });
 
-
 router.post('/adClick', function (req, res) {
     // to run a query we can acquire a client from the pool,
     // run a query on the client, and then return the client to the pool
@@ -2557,7 +2548,6 @@ router.post('/adClick', function (req, res) {
     });
 });
 
-
 router.post('/adImpl', function (req, res) {
     // to run a query we can acquire a client from the pool,
     // run a query on the client, and then return the client to the pool
@@ -2598,8 +2588,6 @@ router.post('/adImpl', function (req, res) {
         });
     });
 });
-
-
 
 router.get('/firstwin', function (req, res) {
     // to run a query we can acquire a client from the pool,
@@ -2662,10 +2650,6 @@ router.get('/firstwin', function (req, res) {
 
     });
 });
-
-
-
-
 
 createUser = function (username, ep, epEventName) {
     pool.connect(function (err, client, done) {
