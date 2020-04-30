@@ -96,79 +96,82 @@ pool.on('error', function (err, client) {
 	└───────────────────────── second (0 - 59, OPTIONAL)
  */
 var schedule = require('node-schedule');
-// 每月的1日0点30分30秒触发 ：'30 30 0 1 * *'
-var j = schedule.scheduleJob('0 0 0 1 * *', function () {
-    console.log('The scheduleJob run on first day of every month!', moment().format('YYYY-MM-DD HH:mm'));
-
-
-    pool.connect(function (err, client, done) {
-        if (err) {
-            return console.error('error fetching client from pool', err);
-        }
-
-        let sql = `update user_info set pt = (pt - (pt - 1000) * 0.5 )
-                    where pt > 1000`;
-
-        // Monthly pt reduce will be done in function monthly_user_historical_record()
-        //client.query(sql, function (err, result) {
-        //    done();
-        //    if (err) {
-        //        return console.error('error running monthly scheduleJob', err);
-        //    }
-        //    console.log(result)
-        //});
-    })
-
-    let time = moment().subtract(1, 'month');
-    let season = time.format('YYYY-MM');
-    let higher_limit = time.format('YYYY-MM-01 00:00:01');
-    let lower_limit = moment().subtract(1, 'day').format('YYYY-MM-DD 23:59:59');
-    let base = 1000;
-    pool.query('select monthly_user_historical_record($1::text, $2, $3::boolean, true)', [season, base, false], (err, result) => {
-        if (err)
-            return console.error('error running monthly scheduleJob', err);
-        else
-            pool.query('select collect_win_lose_rate($1, $2)', [lower_limit, higher_limit], (err, result) => {
-                if (err) console.error('error running monthly scheduleJob', err);
-            });
-    });
-});
-
-// cron job 
-
-/**
-	*    *    *    *    *    *
-	┬    ┬    ┬    ┬    ┬    ┬
-	│    │    │    │    │    |
-	│    │    │    │    │    └ day of week (0 - 7) (0 or 7 is Sun)
-	│    │    │    │    └───── month (1 - 12)
-	│    │    │    └────────── day of month (1 - 31)
-	│    │    └─────────────── hour (0 - 23)
-	│    └──────────────────── minute (0 - 59)
-	└───────────────────────── second (0 - 59, OPTIONAL)
- */
-schedule.scheduleJob('1 1 0 1 1 *', function () {
-
-    console.log('The scheduleJob run on 1 Jan !', moment().format('YYYY-MM-DD HH:mm'));
-
-    pool.connect(function (err, client, done) {
-        if (err) {
-            return console.error('error fetching client from pool', err);
-        }
-
-        let sql = `update user_info set pt = 1000`;
-
-        client.query(sql, function (err, result) {
-            done();
+if (!process.env.NO_SCHEDULE) { 
+    // 每月的1日0点30分30秒触发 ：'30 30 0 1 * *'
+    var j = schedule.scheduleJob('0 0 0 1 * *', function () {
+        console.log('The scheduleJob run on first day of every month!', moment().format('YYYY-MM-DD HH:mm'));
+    
+    
+        pool.connect(function (err, client, done) {
             if (err) {
-                return console.error('error running monthly scheduleJob', err);
+                return console.error('error fetching client from pool', err);
             }
-            console.log(result)
+    
+            let sql = `update user_info set pt = (pt - (pt - 1000) * 0.5 )
+                        where pt > 1000`;
+    
+            // Monthly pt reduce will be done in function monthly_user_historical_record()
+            //client.query(sql, function (err, result) {
+            //    done();
+            //    if (err) {
+            //        return console.error('error running monthly scheduleJob', err);
+            //    }
+            //    console.log(result)
+            //});
+        })
+    
+        let time = moment().subtract(1, 'month');
+        let season = time.format('YYYY-MM');
+        let higher_limit = time.format('YYYY-MM-01 00:00:01');
+        let lower_limit = moment().subtract(1, 'day').format('YYYY-MM-DD 23:59:59');
+        let base = 1000;
+        pool.query('select monthly_user_historical_record($1::text, $2, $3::boolean, true)', [season, base, false], (err, result) => {
+            if (err)
+                return console.error('error running monthly scheduleJob', err);
+            else
+                pool.query('select collect_win_lose_rate($1, $2)', [lower_limit, higher_limit], (err, result) => {
+                    if (err) console.error('error running monthly scheduleJob', err);
+                });
         });
-    })
+    });
 
-});
 
+
+    // cron job 
+
+    /**
+        *    *    *    *    *    *
+        ┬    ┬    ┬    ┬    ┬    ┬
+        │    │    │    │    │    |
+        │    │    │    │    │    └ day of week (0 - 7) (0 or 7 is Sun)
+        │    │    │    │    └───── month (1 - 12)
+        │    │    │    └────────── day of month (1 - 31)
+        │    │    └─────────────── hour (0 - 23)
+        │    └──────────────────── minute (0 - 59)
+        └───────────────────────── second (0 - 59, OPTIONAL)
+    */
+    schedule.scheduleJob('1 1 0 1 1 *', function () {
+
+        console.log('The scheduleJob run on 1 Jan !', moment().format('YYYY-MM-DD HH:mm'));
+
+        pool.connect(function (err, client, done) {
+            if (err) {
+                return console.error('error fetching client from pool', err);
+            }
+
+            let sql = `update user_info set pt = 1000`;
+
+            client.query(sql, function (err, result) {
+                done();
+                if (err) {
+                    return console.error('error running monthly scheduleJob', err);
+                }
+                console.log(result)
+            });
+        })
+
+    });
+}
 
 var Filter = require('bad-words-chinese');
 var dirtyWords = require('../dirtyWordsChinese.json');
