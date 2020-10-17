@@ -441,6 +441,19 @@ router.post('/score', function (req, res) {
                         console.log("finished update score !")
                         done()
                     })
+
+                    // 高分赛，懒得弄Analytics于是塞这了
+                    if (process.env.ANALYZER_HOST && userA.pt >= 1400 && userB.pt >= 1400)
+                        request.post(process.env.ANALYZER_HOST).type('form').send({
+                            usernameA: usernameA,
+                            usernameB: usernameB,
+                            userscoreA: userscoreA,
+                            userscoreB: userscoreB,
+                            userdeckA: req.body.userdeckA,
+                            userdeckB: req.body.userdeckB,
+                            first: req.body.first,
+                            arena: 'athletic-elite' 
+                        })
                 });
 
 
