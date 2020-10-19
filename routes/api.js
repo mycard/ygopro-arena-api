@@ -453,7 +453,7 @@ router.post('/score', function (req, res) {
                             userdeckB: req.body.userdeckB,
                             first: req.body.first,
                             arena: 'athletic-elite' 
-                        })
+                        }).end()
                 });
 
 
