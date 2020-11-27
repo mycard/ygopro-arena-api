@@ -1,7 +1,9 @@
 FROM node:7.2.1
-RUN mkdir -p /usr/src/app
-RUN apt-get update
-RUN apt-get install vim -y
+
+RUN sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/g;s/security.debian.org/mirrors.tuna.tsinghua.edu.cn/g' && \
+	apt-get update && \
+	apt-get install vim -y && \
+	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD curl -fs http://localhost:3000/ || exit 1
 WORKDIR /usr/src/app
 COPY package.json /usr/src/app/
