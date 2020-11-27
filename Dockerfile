@@ -1,12 +1,11 @@
-FROM node:7.2.1
+FROM node:buster-slim
 RUN mkdir -p /usr/src/app
-RUN apt-get update
-RUN apt-get install vim -y
+RUN apt-get update && apt-get install vim -y
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD curl -fs http://localhost:3000/ || exit 1
 WORKDIR /usr/src/app
-COPY package.json /usr/src/app/
+COPY package*.json /usr/src/app/
 
-RUN npm install
+RUN npm ci
 COPY . /usr/src/app
 
 # 设置时区
