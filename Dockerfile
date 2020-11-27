@@ -1,6 +1,6 @@
 FROM node:7.2.1
 
-RUN sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/g;s/security.debian.org/mirrors.tuna.tsinghua.edu.cn/g' && \
+RUN sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/g;s/security.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list && \
 	apt-get update && \
 	apt-get install vim -y && \
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* 
