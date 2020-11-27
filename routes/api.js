@@ -1910,28 +1910,34 @@ router.get('/history', function (req, res) {
 
             var total = result.rows[0].count
 
+            const displayRows = [
+                "usernamea", "usernameb", "userscorea", "userscoreb", "expa", "expb", "expa_ex", "expb_ex", "pta", "ptb", "pta_ex", "ptb_ex", "type", "start_time", "end_time", "winner", "isfirstwin"
+            ]
+
+            const displayRowsString = displayRows.join(",")
+
             var sql2 = {
-                text: `SELECT * from battle_history order by start_time desc limit $1 offset $2`,
+                text: `SELECT ${displayRowsString} from battle_history order by start_time desc limit $1 offset $2`,
                 values: [parseFloat(page_num), parseFloat(offset)]
             }
 
             if (username && arena) {
                 sql2 = {
-                    text: `SELECT * from battle_history where ( usernamea = $1 or usernameb = $1 ) and type = $2 order by start_time desc limit $3 offset $4`,
+                    text: `SELECT ${displayRowsString} from battle_history where ( usernamea = $1 or usernameb = $1 ) and type = $2 order by start_time desc limit $3 offset $4`,
                     values: [username, arena, parseFloat(page_num), parseFloat(offset)]
                 }
             }
 
             if (username && !arena) {
                 sql2 = {
-                    text: `SELECT * from battle_history where usernamea = $1 or usernameb = $1 order by start_time desc limit $2 offset $3`,
+                    text: `SELECT ${displayRowsString} from battle_history where usernamea = $1 or usernameb = $1 order by start_time desc limit $2 offset $3`,
                     values: [username, parseFloat(page_num), parseFloat(offset)]
                 }
             }
 
             if (!username && arena) {
                 sql2 = {
-                    text: `SELECT * from battle_history where type = $1 order by start_time desc limit $2 offset $3`,
+                    text: `SELECT ${displayRowsString} from battle_history where type = $1 order by start_time desc limit $2 offset $3`,
                     values: [arena, parseFloat(page_num), parseFloat(offset)]
                 }
             }
