@@ -125,7 +125,8 @@ if (!process.env.NO_SCHEDULE) {
         let higher_limit = time.format('YYYY-MM-01 00:00:01');
         let lower_limit = moment().subtract(1, 'day').format('YYYY-MM-DD 23:59:59');
         let base = 1000;
-        pool.query('select monthly_user_historical_record($1::text, $2, $3::boolean, true)', [season, base, false], (err, result) => {
+        let reset = [1, 4, 7, 10].indexOf(moment().month()) >= 0;
+        pool.query('select monthly_user_historical_record($1::text, $2, $3::boolean, true)', [season, base, reset], (err, result) => {
             if (err)
                 return console.error('error running monthly scheduleJob', err);
             else
